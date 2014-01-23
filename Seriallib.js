@@ -3,7 +3,6 @@
  */
 var com = require('serialport');
 
-
 exports.openSerialPort = function(portname)
 {
     console.log("Attempting to open serial port "+portname);
@@ -14,9 +13,6 @@ exports.openSerialPort = function(portname)
 // Set the object to fire an event after a \n (chr 13 I think)  is in the serial buffer
         parser: com.parsers.readline("\n")
     });
-    //serialPort.
-
-
 
 // I dont understand this call 0 but it works
     serialPort.on("open", function (err,res) {
@@ -32,7 +28,6 @@ exports.openSerialPort = function(portname)
 
     });
 };
-
 
 exports.write = function(data) {
     serialPort.write(data,function(err, results)
