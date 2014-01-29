@@ -40,8 +40,9 @@ wss.on('connection', function(ws) {
     // ws.send('Log Window Now Active');
 
     ws.on('message', function(message) {
-//          twi.websocketDataIn(message,thisId);
-            console.log('received: %s', message,thisId);
+          level451.wsDataIn(message,thisId);
+
+          //  console.log('received: %s', message,thisId);
     });
     ws.on('close', function(ws){
         console.log('Websocket disconnected Id:'+thisId);

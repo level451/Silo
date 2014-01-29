@@ -22,8 +22,9 @@ exports.openSerialPort = function(portname)
     });  //it's console.log('open');
 
     serialPort.on('data', function(data) {
-        console.log(data);
-        websock.send(data);
+      //  console.log(data);
+        level451.sDataIn(data);
+
        //     twi.serialDataIn(data);
 
     });
@@ -32,8 +33,8 @@ exports.openSerialPort = function(portname)
 exports.write = function(data) {
     serialPort.write(data,function(err, results)
     {
-        console.log('err (undefined is none)' + err);
-        console.log('results (serial bytes sent maybe)' + results);
+        //console.log('err (undefined is none)' + err);
+        console.log('serialBytes:' + results);
         //   serialPort.write("settime "+timestamp+"\n",function(err, results) {
         //     console.log("set new time"+timestamp);
 

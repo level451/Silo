@@ -23,7 +23,7 @@ app.use(express.urlencoded());
 app.use(express.methodOverride());
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.get('/led', routes.led);
 // development only
 if ('development' == app.get('env')) {
   app.use(express.errorHandler());
@@ -35,6 +35,6 @@ app.get('/users', user.list);
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
-var level451 = require('./level451');
+global.level451 = require('./level451');
 
 level451.setup();

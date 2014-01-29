@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+
+    <script src="/javascripts/level451web.js"> </script>
+    <script src="/javascripts/screen.js"> </script>
+
+<html>
+<head>
+<%=title%>
+</head>
+<body>
+<button onclick="websocket.send('r 3 100 63 '+test()+'\n');">3 Set Leds</button>
+
+<button onclick="websocket.send('r 5 100 63 '+test()+'\n');">5 Set Leds</button>
+<button onclick="websocket.send('r 3 100 63 0 0 0\n');">3 Leds OFF</button>
+<button onclick="websocket.send('r 5 100 63 0 0 0\n');">5 Leds OFF</button>
+<br>
+<button onclick="websocket.send('r 5 50 10 0 0 0\n');">5 1 wire</button>
+<button onclick="websocket.send('r 5 51 0 0 0 0\n');">5 Light</button>
+<button onclick="websocket.send('r 5 52 9 0 0 0\n');">5 Power</button>
+<button onclick="websocket.send('r 5 53 0 3 0 0\n');">5 Humidity</button>
+<button onclick="websocket.send('r 5 54 0 3 0 20 0 0 0 0\n');">5 Voltage</button>
+<button onclick="websocket.send('r 5 55 0 0 0 0 0 0 0 0\n');">5 Contact</button>
+<button onclick="websocket.send('r 5 56 0 3 0 40 0 0 0 0 0\n');">5 IR</button>
+<button onclick="websocket.send('r 5 59 0 0 0 0 0 0 0 0 0\n');">5 ALL</button>
+<br>
+<button onclick="websocket.send('r 3 50 10 0 0 0\n');">3 1 wire</button>
+<button onclick="websocket.send('r 3 51 0 0 0 0\n');">3 Light</button>
+<button onclick="websocket.send('r 3 52 0 0 0 0\n');">3 Power</button>
+<button onclick="websocket.send('r 3 53 0 0 0 0\n');">3 Humidity</button>
+<button onclick="websocket.send('r 3 54 0 0 0 0 0 0 0 0\n');">3 Voltage</button>
+<button onclick="websocket.send('r 3 55 0 0 0 0 0 0 0 0\n');">3 Contact</button>
+<button onclick="websocket.send('r 3 56 0 0 0 0 0 0 0 0 0\n');">3 IR</button>
+<button onclick="websocket.send('r 3 59 0 0 0 0 0 0 0 0 0\n');">3 ALL</button>
+<button onclick="websocket.send('r 4 59 0 0 0 0 0 0 0 0 0\n');">4 ALL</button>
+<button onclick="websocket.send('r 6 59 0 0 0 0 0 0 0 0 0\n');">6 ALL</button>
+
+<input id="color" type="color" value ="#0F0F03">
+<input id="backlight" type="range" min="0" max="255">
+<button onclick="websocket.send('r 3 200 1\n');">Clear</button>
+<button onclick="websocket.send('r 4 200 1\n');">Clear</button>
+<button onclick="websocket.send('r 5 200 1\n');">Clear</button>
+<button onclick="websocket.send('r 6 200 1\n');">Clear</button>
+<div>
+  <canvas id="screen" width="128" height="160" style="border:1px solid #000000;" tabindex='1'>
+
+  </canvas>
+
+</div>
+</body>
+</html>
+
+<script>
+    function onload(){
+        init(); // init level451web
+        loadscreen(); //init lcd screen canvas
+         }
+    function test(){
+        x=document.getElementById("color").value.replace('#','0x');
+        return(((x>>16)&255)+" "+((x>>8)&255)+" "+((x)&255));
+        //+' '+((x>>8)&255)+' '+x&255;
+    }
+
+    window.addEventListener("load",onload, false);
+</script>
