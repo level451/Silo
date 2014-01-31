@@ -9,3 +9,6 @@ exports.index = function(req, res){
 exports.led = function(req, res){
     res.render('led.ejs', { title: 'LED' });
 };
+exports.info = function(req, res){
+    res.render('info.ejs', { title: 'INFO' });
+};

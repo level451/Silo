@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+
+<script src="/javascripts/level451web.js"> </script>
+<script src="/javascripts/screen.js"> </script>
+<script src="/javascripts/ReconnectingWebsocket.js"> </script>
+
+<html>
+<head>
+    <%=title%>
+</head>
+<body>
+<button onclick="websocket.send('r 3 59 0 0 0 0 0 0 0 0 0\n');">3 ALL</button>
+<%var i = 3;%>
+<div class="sensorinfo" height="250px">
+    <div height="200px">
+    <canvas id="Light_<%=i%>" width="75" height="250"></canvas>
+    <canvas id="Humidity_<%=i%>" width="75" height="250"></canvas>
+    <canvas id="Temp_<%=i%>_0" width="75" height="250"></canvas>
+    <canvas id="IR_<%=i%>" width="100" height="250"></canvas>
+    <canvas id="Contact_<%=i%>" width="100" height="250"></canvas>
+    </div>
+
+    Sensors
+<p class="sensorinfo">Test</p>
+</div>
+
+</body>
+</html>
+
+<script>
+   function drawgauage(id,value){
+       if (value > 99){value = value.toFixed(0);}
+       if (value > 9 && value < 100){value = value.toFixed(1);}
+       if (value < 10){value = value.toFixed(2); }
+       var canvas = document.getElementById(id);
+       //console.log(canvas.width);
+       var center = (canvas.width/2);
+       var c=canvas.getContext("2d");
+       c.strokeStyle="#001010";
+       c.lineWidth = center/3;
+       c.clearRect(0,0,center*2,center*2);
+       c.beginPath();
+       c.arc(center,center,center *.7,0,Math.PI,true);
+       c.strokeStyle="#a0a0a0";
+       c.stroke();
+       c.beginPath();
+       c.arc(center,center,center *.8,Math.PI,((value/100)*Math.PI)-Math.PI,false);
+       c.strokeStyle="red";
+       c.stroke();
+       c.font = (center/2.5)+"px Arial";
+
+       c.fillText(value,center-(center/2.5),center);
+   }
+
+    function msghandler(indata){
+        s=JSON.parse(indata);
+        console.log(s.Light_3);
+        if (s.Light_3 != undefined){
+        drawgauage("Light_3", (s.Light_3/1024)*100);
+        }
+        if (s.Humidity_3 != undefined){
+            drawgauage("Humidity_3", (s.Humidity_3));
+        }
+        if (s.Light_3 != undefined){
+            drawgauage("Temp_3_0", (s.Temp_3_0));
+        }
+        if (s.Light_3 != undefined){
+            drawgauage("IR_3", (s.IR_3));
+        }
+        if (s.Light_3 != undefined){
+            drawgauage("Contact_3", (s.Contact_3)*100);
+        }
+    }
+
+    function onload(){
+      // drawgauage("test",2);
+        WebSocketSetup(); // start the websocket
+      //  loadscreen(); //init lcd screen canvas
+    }
+
+    window.addEventListener("load",onload, false);
+</script>
+<style>
+div.sensorinfo
+{
+    border-style:solid;
+    border-width:1px;
+}
+
+</style>

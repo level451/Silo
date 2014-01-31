@@ -32,18 +32,18 @@ function lcdclick(e){
 }
 function backlight(e){
     console.log( document.getElementById("backlight").value);
-    websocket.send('r 5 200 0 '+document.getElementById("backlight").value+'\n');
+    websocket.send('r 3 200 0 '+document.getElementById("backlight").value+'\n');
 }
 function lcdkey(e){
     //console.log(e);
     if (e.keyCode == 13){
-        screen[pn].gathererpacket = 'r 5 200 11 '+lcdx+' '+lcdy+' '+lcdtextcode[0]+' '+lcdtextcode[1]+' '+lcdtextcode[2]+' '+lcdtextcode[3]+' '+lcdtextcode[4]+' '+lcdtextcode[5]+' '+lcdtextcode[6]+' '+lcdtextcode[7]+' '+lcdtextcode[8]+' '+lcdtextcode[9]+'\n';
+        screen[pn].gathererpacket = 'r 3 200 11 '+lcdx+' '+lcdy+' '+lcdtextcode[0]+' '+lcdtextcode[1]+' '+lcdtextcode[2]+' '+lcdtextcode[3]+' '+lcdtextcode[4]+' '+lcdtextcode[5]+' '+lcdtextcode[6]+' '+lcdtextcode[7]+' '+lcdtextcode[8]+' '+lcdtextcode[9]+'\n';
         websocket.send(screen[pn].gathererpacket);
         console.log('send');
         return;
     }
     if (e.keyCode > 122 || e.keyCode < 48){
-        return;}444
+        return;}
 
     code =  e.keyCode + (e.shiftKey? 0 : 32);
     lcdtextcode[lcdtextcodeindex] = code;

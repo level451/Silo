@@ -1,15 +1,16 @@
 /**
  * Created by todd on 1/23/14.
  */
-var wsUri = "ws://localhost:8080";
+var wsUri = "ws://10.6.1.138:8080";
 function init()
 {
 
    WebSocketSetup();
 }
 function WebSocketSetup()
+
 {
-    websocket = new WebSocket(wsUri);
+    websocket = new ReconnectingWebSocket(wsUri);
     websocket.onopen = function(evt) { onOpen(evt) };
     websocket.onclose = function(evt) { onClose(evt) };
     websocket.onmessage = function(evt) { onMessage(evt) };
@@ -24,6 +25,8 @@ function onClose(evt) {
 }
 function onMessage(evt)    {
  //   writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
+    console.log(evt.data);
+    msghandler(evt.data);
     //websocket.close();
 }
 function onError(evt) {

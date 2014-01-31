@@ -22,7 +22,9 @@ exports.wsDataIn = function(data,id){
 exports.sDataIn = function(data){
     try{
         var sData = JSON.parse(data);
-    console.log(sData);
+        sData.dataType = "Serial";
+        websock.send(JSON.stringify(sData) );
+        console.log(sData);
     }
     catch(err)
     {

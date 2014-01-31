@@ -1,7 +1,8 @@
 <!DOCTYPE HTML>
-//test comment
+
     <script src="/javascripts/level451web.js"> </script>
     <script src="/javascripts/screen.js"> </script>
+    <script src="/javascripts/ReconnectingWebsocket.js"> </script>
 
 <html>
 <head>
@@ -51,7 +52,7 @@
 
 <script>
     function onload(){
-        init(); // init level451web
+        WebSocketSetup(); // start the websocket
         loadscreen(); //init lcd screen canvas
          }
     function test(){
