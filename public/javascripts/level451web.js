@@ -1,7 +1,7 @@
 /**
  * Created by todd on 1/23/14.
  */
-var wsUri = "ws://10.6.1.138:8080";
+var wsUri = "ws://level451.com:8080";
 function init()
 {
 

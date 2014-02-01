@@ -13,11 +13,21 @@
 <%var i = 3;%>
 <div class="sensorinfo" height="250px">
     <div height="200px">
-    <canvas id="Light_<%=i%>" width="75" height="250"></canvas>
-    <canvas id="Humidity_<%=i%>" width="75" height="250"></canvas>
-    <canvas id="Temp_<%=i%>_0" width="75" height="250"></canvas>
-    <canvas id="IR_<%=i%>" width="100" height="250"></canvas>
-    <canvas id="Contact_<%=i%>" width="100" height="250"></canvas>
+    <canvas id="Light_<%=i%>" width="75" height="75"></canvas>
+    <canvas id="Humidity_<%=i%>" width="75" height="75"></canvas>
+    <canvas id="Temp0_<%=i%>" width="75" height="75"></canvas>
+    <canvas id="IR_<%=i%>" width="100" height="75"></canvas>
+    <canvas id="Contact_<%=i%>" width="100" height="75"></canvas>
+    <canvas id="Power_<%=i%>" width="100" height="75"></canvas>
+        line
+        <br>
+        <%var i = 5;%>
+        <canvas id="Light_<%=i%>" width="75" height="75"></canvas>
+        <canvas id="Humidity_<%=i%>" width="75" height="75"></canvas>
+        <canvas id="Temp0_<%=i%>" width="75" height="75"></canvas>
+        <canvas id="IR_<%=i%>" width="100" height="75"></canvas>
+        <canvas id="Contact_<%=i%>" width="100" height="75"></canvas>
+        <canvas id="Power_<%=i%>" width="100" height="75"></canvas>
     </div>
 
     Sensors
@@ -29,9 +39,15 @@
 
 <script>
    function drawgauage(id,value){
+
        if (value > 99){value = value.toFixed(0);}
        if (value > 9 && value < 100){value = value.toFixed(1);}
-       if (value < 10){value = value.toFixed(2); }
+       if (value < 10 && value > 0){
+           console.log("value"+value);
+           console.log("id"+id);
+           value = value * 1;
+          value = value.toFixed(2);
+           }
        var canvas = document.getElementById(id);
        //console.log(canvas.width);
        var center = (canvas.width/2);
@@ -49,26 +65,46 @@
        c.stroke();
        c.font = (center/2.5)+"px Arial";
        c.fillText(value,center-(center/2.5),center);
-       c.fillText(id,0,center*1.5)
+       c.fillText(id.substring(0,id.indexOf("_")),0,center*1.5)
    }
 
     function msghandler(indata){
         s=JSON.parse(indata);
-        console.log(s.Light_3);
+        if (s.Light_5 != undefined){
+            drawgauage("Light_5", (s.Light_5/1024)*100);
+        }
+        if (s.Humidity_5 != undefined){
+            drawgauage("Humidity_5", (s.Humidity_5));
+        }
+        if (s.Temp0_5 != undefined){
+            drawgauage("Temp0_5", (s.Temp0_5));
+        }
+        if (s.IR_5 != undefined){
+            drawgauage("IR_5", (s.IR_5));
+        }
+        if (s.Contact_5 != undefined){
+            drawgauage("Contact_5", (s.Contact_5)*100);
+        }
+        if (s.Power_5 != undefined){
+            drawgauage("Power_5", (s.Power_3)/10);
+        }
         if (s.Light_3 != undefined){
-        drawgauage("Light_3", (s.Light_3/1024)*100);
+            drawgauage("Light_3", (s.Light_3/1024)*100);
         }
         if (s.Humidity_3 != undefined){
             drawgauage("Humidity_3", (s.Humidity_3));
         }
-        if (s.Light_3 != undefined){
-            drawgauage("Temp_3_0", (s.Temp_3_0));
+        if (s.Temp0_3 != undefined){
+            drawgauage("Temp0_3", (s.Temp0_3));
         }
-        if (s.Light_3 != undefined){
+        if (s.IR_3 != undefined){
             drawgauage("IR_3", (s.IR_3));
         }
-        if (s.Light_3 != undefined){
+        if (s.Contact_3 != undefined){
             drawgauage("Contact_3", (s.Contact_3)*100);
+        }
+        if (s.Power_3 != undefined){
+            drawgauage("Power_3", (s.Power_3)/10);
         }
     }
 
