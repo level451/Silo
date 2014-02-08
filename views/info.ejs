@@ -7,113 +7,109 @@
 <html>
 <head>
     <%=title%>
+    <meta name = "viewport" content = "width=device-width, initial-scale = 1.0">
 </head>
 <body>
+<div>
 <button onclick="websocket.send('r 3 59 0 0 0 0 0 0 0 0 0\n');">3 ALL</button>
-<%var i = 3;%>
-<div class="sensorinfo" height="250px">
-    <div height="200px">
-    <canvas id="Light_<%=i%>" width="75" height="75"></canvas>
-    <canvas id="Humidity_<%=i%>" width="75" height="75"></canvas>
-    <canvas id="Temp0_<%=i%>" width="75" height="75"></canvas>
-    <canvas id="IR_<%=i%>" width="100" height="75"></canvas>
-    <canvas id="Contact_<%=i%>" width="100" height="75"></canvas>
-    <canvas id="Power_<%=i%>" width="100" height="75"></canvas>
-        line
-        <br>
-        <%var i = 5;%>
-        <canvas id="Light_<%=i%>" width="75" height="75"></canvas>
-        <canvas id="Humidity_<%=i%>" width="75" height="75"></canvas>
-        <canvas id="Temp0_<%=i%>" width="75" height="75"></canvas>
-        <canvas id="IR_<%=i%>" width="100" height="75"></canvas>
-        <canvas id="Contact_<%=i%>" width="100" height="75"></canvas>
-        <canvas id="Power_<%=i%>" width="100" height="75"></canvas>
-    </div>
-
-    Sensors
-<p class="sensorinfo">Test</p>
+<button onclick="savesettings()">Save</button>
 </div>
 
+
+<div class="sensorinfo">
+<select ID="selectedgatherer" onchange="validateselectedgatherer(this)">
+<%for (var prop in gathererSettings.id){%>
+<option value =<%=prop%>><%=gathererSettings.id[prop].name+"("+prop+")"%></option>
+<%}%>
+</select>
+<button onclick="addnewgatherer()">New</button>
+    <button onclick="savegatherer()">Save</button>
+<div  class="sensorinfo" id="editsettings">
+    ID <input id="ID" class="edit" value="<%=1%>" onblur="validateid(this)">
+    Name <input id="NAME" class="edit" value="<%=gathererSettings.id[1].name%>" onblur="validatename(this)">
+</div>
+
+</div>
+<div class="sensorinfo" height="250px" id="gauges">
+    Sensors
+<p class="sensorinfo">Sensor Info Div</p>
+</div>
 </body>
 </html>
 
 <script>
-   function drawgauage(id,value){
+ function validateselectedgatherer(x){
+     document.getElementById("ID").value= x.value;
+     document.getElementById("NAME").value= gatherer.id[x.value].name;
 
-       if (value > 99){value = value.toFixed(0);}
-       if (value > 9 && value < 100){value = value.toFixed(1);}
-       if (value < 10 && value > 0){
-           console.log("value"+value);
-           console.log("id"+id);
-           value = value * 1;
-          value = value.toFixed(2);
-           }
-       var canvas = document.getElementById(id);
-       //console.log(canvas.width);
-       var center = (canvas.width/2);
-       var c=canvas.getContext("2d");
-       c.strokeStyle="#001010";
-       c.lineWidth = center/3;
-       c.clearRect(0,0,center*2,center*2);
-       c.beginPath();
-       c.arc(center,center,center *.7,0,Math.PI,true);
-       c.strokeStyle="#a0a0a0";
-       c.stroke();
-       c.beginPath();
-       c.arc(center,center,center *.8,Math.PI,((value/100)*Math.PI)-Math.PI,false);
-       c.strokeStyle="red";
-       c.stroke();
-       c.font = (center/2.5)+"px Arial";
-       c.fillText(value,center-(center/2.5),center);
-       c.fillText(id.substring(0,id.indexOf("_")),0,center*1.5)
-   }
+ }
 
-    function msghandler(indata){
-        s=JSON.parse(indata);
-        if (s.Light_5 != undefined){
-            drawgauage("Light_5", (s.Light_5/1024)*100);
-        }
-        if (s.Humidity_5 != undefined){
-            drawgauage("Humidity_5", (s.Humidity_5));
-        }
-        if (s.Temp0_5 != undefined){
-            drawgauage("Temp0_5", (s.Temp0_5));
-        }
-        if (s.IR_5 != undefined){
-            drawgauage("IR_5", (s.IR_5));
-        }
-        if (s.Contact_5 != undefined){
-            drawgauage("Contact_5", (s.Contact_5)*100);
-        }
-        if (s.Power_5 != undefined){
-            drawgauage("Power_5", (s.Power_3)/10);
-        }
-        if (s.Light_3 != undefined){
-            drawgauage("Light_3", (s.Light_3/1024)*100);
-        }
-        if (s.Humidity_3 != undefined){
-            drawgauage("Humidity_3", (s.Humidity_3));
-        }
-        if (s.Temp0_3 != undefined){
-            drawgauage("Temp0_3", (s.Temp0_3));
-        }
-        if (s.IR_3 != undefined){
-            drawgauage("IR_3", (s.IR_3));
-        }
-        if (s.Contact_3 != undefined){
-            drawgauage("Contact_3", (s.Contact_3)*100);
-        }
-        if (s.Power_3 != undefined){
-            drawgauage("Power_3", (s.Power_3)/10);
-        }
+function validateid(x){
+    if (x.value > 255 || x.value < 1){
+        console.log(x);
+        x.value=document.getElementById("selectedgatherer").value
+        alert("ID Must be between 1 and 255");
+        return;
+    }
+        document.getElementById("selectedgatherer").value = x.value;
+       if (typeof(gatherer.id[document.getElementById("ID").value]) == "object"){
+        document.getElementById("NAME").value=gatherer.id[document.getElementById("ID").value].name;
+        return;
+       }else
+    { document.getElementById("NAME").value="Enter Name"
     }
 
+    if (typeof(gatherer.id[document.getElementById("ID").value]) != "object"){
+        gatherer.id[document.getElementById("ID").value]={};
+        gatherer.id[document.getElementById("ID").value].name=document.getElementById("NAME").value;
+        savesettings();
+        refreshselectedgatherer();
+
+    }
+
+    document.getElementById("selectedgatherer").value = x.value;
+}
+function validatename(x){
+    if (x.value.trim().length == 0){
+       // x.value=document.getElementById("selectedgatherer").value.text.trim().substr(0,10);
+        x.value=document.getElementById("selectedgatherer").options[document.getElementById("selectedgatherer").selectedIndex].text;
+
+        alert("Name Cannot Be Empty");
+    }
+    x.value = x.value.trim().substr(0,10);
+    if (typeof(gatherer.id[document.getElementById("ID").value]) != "object"){
+        gatherer.id[document.getElementById("ID").value]={};
+    }
+    gatherer.id[document.getElementById("ID").value].name=document.getElementById("NAME").value;
+    savesettings();
+    refreshselectedgatherer();
+    document.getElementById("selectedgatherer").value = document.getElementById("ID").value;
+}
+function refreshselectedgatherer(){
+    var temp=""
+    for (var prop in gatherer.id)
+    {
+        temp = temp+'<option value ="'+prop+'">'+gatherer.id[prop].name+'('+prop+')'+'</option>'
+
+    }
+
+
+    document.getElementById("selectedgatherer").innerHTML=temp;
+
+
+}
+
+function addnewgatherer(){
+    var id=document.getElementById("ID");
+    var name=document.getElementById("NAME");
+    id.value="";
+    name.value=""
+}
     function onload(){
-      // drawgauage("test",2);
         WebSocketSetup(); // start the websocket
       //  loadscreen(); //init lcd screen canvas
     }
-
+    var gatherer=<%-JSON.stringify(gathererSettings)%>; // load the settings from the setting collection
     window.addEventListener("load",onload, false);
 </script>
 <style>

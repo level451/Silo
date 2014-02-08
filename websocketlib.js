@@ -72,7 +72,7 @@ exports.send = function(data,id)
             if (websocket[i])
             {
                 websocket[i].send(data);
-                console.info("websocket sending to client "+i);
+               //console.info("websocket sending to client "+i);
             }
 
 

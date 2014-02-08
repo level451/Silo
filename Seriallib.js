@@ -34,7 +34,7 @@ exports.write = function(data) {
     serialPort.write(data,function(err, results)
     {
         //console.log('err (undefined is none)' + err);
-        console.log('serialBytes:' + results);
+       // console.log('serialBytes:' + results);
         //   serialPort.write("settime "+timestamp+"\n",function(err, results) {
         //     console.log("set new time"+timestamp);
 
