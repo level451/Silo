@@ -38,5 +38,5 @@ http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
 global.level451 = require('./level451');
-
+global.ejs = require('./ejs');
 level451.setup();

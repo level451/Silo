@@ -10,7 +10,7 @@ MongoClient = require('mongodb').MongoClient;
 
 exports.setup = function(){
 
-        serial.openSerialPort('com3'); //windows
+        serial.openSerialPort('com6'); //windows
    //     seriallib.openSerialPort("/dev/ttyACM0"); //not windows
         websock.listen();
 // mongo
@@ -44,6 +44,7 @@ exports.setup = function(){
                 {
                     gathererSettings.type = "gatherer";
                     gathererSettings.id = {"1":{"name":"Parent"}};
+
                     console.error("Gatherer Settings missing");
                     cSettings.insert(gathererSettings,function (err,res){
                         console.log("Gatherer settings created "+res);
@@ -75,32 +76,10 @@ exports.wsDataIn = function(data,id){
     {
         console.log("parse web data error"+err)
     }
-
+    console.log(webData);
     console.log('Packettype '+webData.packettype);
-    if (webData.packettype == "Sensor name update"){
-        delete webData.packettype;
-        for(var prop in webData)
-        {
-            sensorSettings[prop].name = webData[prop].name;
-        }
-        collectionSettings.update({'type':'sensors'}, sensorSettings ,{upsert:true, w:1},function(err,res){
-            console.log('Sensors settings name updated:'+res);
-        });
-    }
-
-    if (webData.packettype == "Sensor order update"){
-        delete webData.packettype;
-        for(var prop in webData)
-        {
-            sensorSettings[prop].order = webData[prop].order;
-        }
-
-        collectionSettings.update({'type':'sensors'},sensorSettings,{upsert:true, w:1},function(err,res){
-
-            console.log('Sensor Setting order updated'+res);
-        });
-
-
+    if (webData.packettype == "packet"){
+        serial.write(webData.data)
     }
     if (webData.packettype == "query"){
         console.log('query request');

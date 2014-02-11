@@ -7,6 +7,16 @@ function init()
 
    WebSocketSetup();
 }
+function viewtoggle(inobject){
+
+    if (document.getElementById(inobject).style.display != 'none'){
+        document.getElementById(inobject).style.display = 'none';
+    } else {
+        document.getElementById(inobject).style.display = 'block';
+    }
+
+}
+
 function WebSocketSetup()
 
 {

@@ -12,7 +12,7 @@
 <body>
 <div>
 <button onclick="websocket.send('r 3 59 0 0 0 0 0 0 0 0 0\n');">3 ALL</button>
-<button onclick="savesettings()">Save</button>
+
 </div>
 
 
@@ -22,11 +22,65 @@
 <option value =<%=prop%>><%=gathererSettings.id[prop].name+"("+prop+")"%></option>
 <%}%>
 </select>
-<button onclick="addnewgatherer()">New</button>
-    <button onclick="savegatherer()">Save</button>
-<div  class="sensorinfo" id="editsettings">
+<button onclick = "viewtoggle('editsettings')">Edit</button>
+<button onclick = "viewtoggle('editeeprom')">EEprom</button>
+<button onclick = "createpacket()">Create Packet</button>
+
+
+<div  class="sensorinfo" id="createpacket" style="display:none;">
+Send Packet To <select id="packetdestination" onchange="createpacketoptionrefresh()"></select>
+Send Results To  <select id="packetsource" onchange="createpacketoptionrefresh()"></select>
+Packet Type <select id="packettype"></select>
+<div width = "200" height ="100" style="display:block;">
+
+1<input type="checkbox" id="led1">
+2<input type="checkbox" id="led2">
+3<input type="checkbox" id="led3">
+4<input type="checkbox" id="led4">
+5<input type="checkbox" id="led5">
+6<input type="checkbox" id="led6"><br>
+<input type="range" min="0" max="255" id="packetred" oninput="quickled()"> RED <br>
+<input type="range" min="0" max="255" id="packetgreen" oninput="quickled()"> GREEN <br>
+<input type="range" min="0" max="255" id="packetblue" oninput="quickled()"> BLUE
+</div>
+    Send to LCD  <select id="packetlcd"></select>
+
+
+</select>
+
+</div>
+<div  class="sensorinfo" id="editeeprom" style="display:none;">
+
+    0-14 startup<br>
+    15-29 Timer 0<br>
+    <canvas id="screen" width="128" height="160" style="border:1px solid #000000;" tabindex="1">
+
+    </canvas>
+</div>
+<div  class="sensorinfo" id="editsettings" style="display:none;">
+   <h2>Sensors</h2>
+    <button onclick="addnewgatherer()">New</button>
     ID <input id="ID" class="edit" value="<%=1%>" onblur="validateid(this)">
     Name <input id="NAME" class="edit" value="<%=gathererSettings.id[1].name%>" onblur="validatename(this)">
+<div>
+    <%for (var i=0; i<8;++i){%>
+    <%-ejs.optiondraw("Temp"+i,"Temperature "+i)%>
+    <%}%>
+    <%-ejs.optiondraw("Light","Light")%>
+    <%-ejs.optiondraw("Humidity","Relative Humidity")%>
+    <%-ejs.optiondraw("Power0","Power CT1")%>
+    <%-ejs.optiondraw("Power1","Power CT0")%>
+    <%-ejs.optiondraw("Vin","Processor Volatage")%>
+    <%-ejs.optiondraw("Contact","Contact Sensor")%>
+    <%-ejs.optiondraw("IR","IR Temperature Sensor")%>
+
+
+
+
+</div>
+
+
+    <button onclick = "document.getElementById('editsettings').style.display = 'none'">Hide</button>
 </div>
 
 </div>
@@ -38,20 +92,121 @@
 </html>
 
 <script>
+ function quickled(){
+    var selectedleds = ((document.getElementById("led1").checked == true   ) ? 1 : 0)+((document.getElementById("led2").checked == true   ) ? 2 : 0)+((document.getElementById("led3").checked == true   ) ? 4 : 0)+((document.getElementById("led4").checked == true   ) ? 8 : 0)+((document.getElementById("led5").checked == true   ) ? 16 : 0)+((document.getElementById("led6").checked == true   ) ? 32 : 0);
+     var temp = '';
+     temp = temp + 'r '+document.getElementById("packetdestination").value+' 100 '+selectedleds+' ';
+     temp=temp + document.getElementById("packetred").value+" "+ document.getElementById("packetgreen").value+ " "+document.getElementById("packetblue").value+ '\n';
+     var sendobj = {};
+     sendobj.packettype="packet";
+     sendobj.data = temp;
+  //   websocket.send('{"packettype":"packet","data":"r 6 100 0 222 128 128\n"}');
+     websocket.send(JSON.stringify(sendobj));
+//console.log(JSON.stringify(sendobj));
+ }
+    function createpacket(){
+     viewtoggle('createpacket');
+     document.getElementById("packetdestination").innerHTML=document.getElementById("selectedgatherer").innerHTML;
+     document.getElementById("packetsource").innerHTML=document.getElementById("selectedgatherer").innerHTML;
+     createpacketoptionrefresh();
+ }
+ function createpacketoptionrefresh(){
+var source = document.getElementById("packetsource").value;
+var dest = document.getElementById("packetdestination").value;
+var type = document.getElementById("packettype");
+var lcd =  document.getElementById("packetlcd");
+var s = gatherer.id[source].sensor;
+var d = gatherer.id[dest].sensor;
+var temp='';
+for (var prop in d){
+    console.log(d[prop].available);
+    if (d[prop].available){
+        temp=temp+'<option value='+d[prop].packettype+'>Request '+d[prop].name+'('+prop+')</option>';
+
+    }
+
+}
+     temp=temp+'<option value=200>SET RGB Leds</option>';
+     type.innerHTML=temp;
+temp =''
+     temp='<option value=0> No</option>';
+     console.log(type);
+     if(type.value >49 && type.value <59){
+         temp=temp+'<option value=1>Small Font with decimal</option>';
+         temp=temp+'<option value=2>Small Font without decimal</option>';
+         temp=temp+'<option value=3>Medium Font with decimal</option>';
+         temp=temp+'<option value=4>Medium Font without decimal</option>';
+         temp=temp+'<option value=5>Large Font with decimal</option>';
+         temp=temp+'<option value=6>Large Font without decimal</option>';
+
+     }
+
+     lcd.innerHTML = temp;
+ }
+ function readsensors(){
+
+     if (gatherer.id[document.getElementById("ID").value].sensor == undefined){
+         gatherer.id[document.getElementById("ID").value].sensor={};
+     }
+     for (var i=0; i<8;++i){
+     writegatherertohtml("Temp"+i);
+     }
+     writegatherertohtml("Light");
+     writegatherertohtml("Power0");
+     writegatherertohtml("Power1");
+     writegatherertohtml("Humidity");
+     writegatherertohtml("Contact");
+     writegatherertohtml("Vin");
+     writegatherertohtml("IR");
+
+ }
+ function writegatherertohtml(insensor){
+     var id=document.getElementById("ID").value;
+     if (gatherer.id[id].sensor[insensor] == undefined){
+         gatherer.id[id].sensor[insensor] = {};
+         gatherer.id[id].sensor[insensor].available = false;
+         gatherer.id[id].sensor[insensor].name = "";
+     }
+     document.getElementById(insensor+".available").checked = gatherer.id[id].sensor[insensor].available;
+     document.getElementById(insensor+".name").value =gatherer.id[id].sensor[insensor].name;
+ }
+ function writesensors(){
+     var id=document.getElementById("ID").value;
+        for (var i=0; i<8;++i){
+        readhtmltogatherer("Temp"+i,50,i);
+        }
+        readhtmltogatherer("Light",51,0);
+         readhtmltogatherer("Power0",52,9);
+         readhtmltogatherer("Power1",53,9);
+         readhtmltogatherer("Humidity",54,0);
+         readhtmltogatherer("Vin",55,0);
+         readhtmltogatherer("Contact",56,0);
+         readhtmltogatherer("IR",57,0)
+         savesettings();
+     }
+function readhtmltogatherer(insensor,inpackettype,inpacketoption){
+    var id=document.getElementById("ID").value;
+    if (gatherer.id[id].sensor[insensor] == undefined){
+        gatherer.id[id].sensor[insensor] = {};
+        gatherer.id[id].sensor[insensor].available = false;
+        gatherer.id[id].sensor[insensor].name = "";
+    }
+    gatherer.id[id].sensor[insensor].available=document.getElementById(insensor+".available").checked;
+    gatherer.id[id].sensor[insensor].name=  document.getElementById(insensor+".name").value;
+    gatherer.id[id].sensor[insensor].packettype = inpackettype;
+    gatherer.id[id].sensor[insensor].packetoption = inpacketoption;
+}
+
  function validateselectedgatherer(x){
      document.getElementById("ID").value= x.value;
      document.getElementById("NAME").value= gatherer.id[x.value].name;
-
+    readsensors();
  }
 
 function validateid(x){
-    if (x.value > 255 || x.value < 1){
-        console.log(x);
-        x.value=document.getElementById("selectedgatherer").value
-        alert("ID Must be between 1 and 255");
-        return;
-    }
-        document.getElementById("selectedgatherer").value = x.value;
+   // console.log(x.value);
+    if (x.value < 256 && x.value > 0){
+       document.getElementById("selectedgatherer").value = x.value;
        if (typeof(gatherer.id[document.getElementById("ID").value]) == "object"){
         document.getElementById("NAME").value=gatherer.id[document.getElementById("ID").value].name;
         return;
@@ -61,27 +216,40 @@ function validateid(x){
 
     if (typeof(gatherer.id[document.getElementById("ID").value]) != "object"){
         gatherer.id[document.getElementById("ID").value]={};
+        gatherer.id[document.getElementById("ID").value].sensor={};
         gatherer.id[document.getElementById("ID").value].name=document.getElementById("NAME").value;
-        savesettings();
+        writesensors(); //writes to values of the sensors to gatherer object
+        //savesettings(); //save to gatherer object to the collection
         refreshselectedgatherer();
 
     }
+    }
+    else{
+        //console.log(x);
+        x.value=document.getElementById("selectedgatherer").value
+        document.getElementById("NAME").value=gatherer.id[document.getElementById("ID").value].name;
+        alert("ID Must be between 1 and 255");
+        return;
 
+
+    }
     document.getElementById("selectedgatherer").value = x.value;
 }
 function validatename(x){
     if (x.value.trim().length == 0){
        // x.value=document.getElementById("selectedgatherer").value.text.trim().substr(0,10);
-        x.value=document.getElementById("selectedgatherer").options[document.getElementById("selectedgatherer").selectedIndex].text;
-
+        //x.value=document.getElementById("selectedgatherer").options[document.getElementById("selectedgatherer").selectedIndex].text;
+        x.value = "Enter Name";
         alert("Name Cannot Be Empty");
+        return;
     }
     x.value = x.value.trim().substr(0,10);
     if (typeof(gatherer.id[document.getElementById("ID").value]) != "object"){
         gatherer.id[document.getElementById("ID").value]={};
     }
     gatherer.id[document.getElementById("ID").value].name=document.getElementById("NAME").value;
-    savesettings();
+    writesensors();
+
     refreshselectedgatherer();
     document.getElementById("selectedgatherer").value = document.getElementById("ID").value;
 }
@@ -107,6 +275,7 @@ function addnewgatherer(){
 }
     function onload(){
         WebSocketSetup(); // start the websocket
+        readsensors(); // populate html with gatherer values
       //  loadscreen(); //init lcd screen canvas
     }
     var gatherer=<%-JSON.stringify(gathererSettings)%>; // load the settings from the setting collection
