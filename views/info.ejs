@@ -3,15 +3,29 @@
 <script src="/javascripts/level451web.js"> </script>
 <script src="/javascripts/screen.js"> </script>
 <script src="/javascripts/ReconnectingWebsocket.js"> </script>
-
+<script src="/javascripts/info.js"> </script>
 <html>
 <head>
     <%=title%>
     <meta name = "viewport" content = "width=device-width, initial-scale = 1.0">
 </head>
 <body>
+<button onclick="query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14',new Date());">query 14 days 1 hour</button>
+<button onclick="query('avg1',new Date(new Date()-(24*60*60000)),new Date(),'inittest');">query 1 days 1 min</button>
+<button onclick="query('avg1',new Date(((document.getElementById('stime').min*1)-24*60*60000)),new Date(document.getElementById('stime').min*1));">previous Day 1 min</button><button onclick="query('avg1440',new Date(new Date()-((24*30)*60*60000)),new Date());">query 30 days 1 day</button>
+<button onclick="query('test',new Date(),1);">test</button>
+
+<button onclick="cut()">cut</button>
+<button onclick="query('log',new Date(document.getElementById('stime').value*1),new Date(document.getElementById('etime').value*1));">splice</button>
+new Date(document.getElementById("stime").value*1)
 <div>
-<button onclick="websocket.send('r 3 59 0 0 0 0 0 0 0 0 0\n');">3 ALL</button>
+
+    <canvas id="x" width="1200" height="100" style="border:1px solid #000000;" tabindex="1"></canvas>
+    <br>
+    <input type="range" min="0" max="255" step="30000" id="stime" onchange="zoomgraph()" > start
+    <input type="range" min="0" max="255" step="30000" id="etime"  onchange="zoomgraph()" > end <br>
+    <canvas id="x1" width="1200" height="400" style="border:1px solid #000000;" tabindex="1"></canvas>
+
 
 </div>
 
@@ -28,10 +42,23 @@
 
 
 <div  class="sensorinfo" id="createpacket" style="display:none;">
-Send Packet To <select id="packetdestination" onchange="createpacketoptionrefresh()"></select>
-Send Results To  <select id="packetsource" onchange="createpacketoptionrefresh()"></select>
-Packet Type <select id="packettype"></select>
-<div width = "200" height ="100" style="display:block;">
+
+    Send Packet To <select id="packetdestination" onchange="createpacketoptionrefresh(1)"></select>
+    Packet Type <select id="packettype" onchange="createpacketoptionrefresh(0)"></select>
+   <select id="packetsource" onchange="createpacketoptionrefresh(0)"></select>
+
+<select id="packetlcd" onchange="createpacketoptionrefresh(0)">
+    <option value=0>Dont Send to LCD</option>
+    <option value=2>Send to LCD Small Font with decimal</option>
+    <option value=1>Send to LCD Small Font </option>
+    <option value=4>Send to LCD Medium Font with decimal</option>
+    <option value=3>Send to LCD Medium Font </option>
+    <option value=6>Send to LCD Large Font with decimal</option>
+    <option value=5>Send to LCD Large Font </option>
+
+    </select>
+
+<div width = "200" height ="100" id="leds" style="display:none;">
 
 1<input type="checkbox" id="led1">
 2<input type="checkbox" id="led2">
@@ -39,24 +66,203 @@ Packet Type <select id="packettype"></select>
 4<input type="checkbox" id="led4">
 5<input type="checkbox" id="led5">
 6<input type="checkbox" id="led6"><br>
-<input type="range" min="0" max="255" id="packetred" oninput="quickled()"> RED <br>
-<input type="range" min="0" max="255" id="packetgreen" oninput="quickled()"> GREEN <br>
-<input type="range" min="0" max="255" id="packetblue" oninput="quickled()"> BLUE
+<input type="range" min="0" max="255" id="packetred" onmouseup="quickled()" > RED <br>
+<input type="range" min="0" max="255" id="packetgreen" onmouseup="quickled()"> GREEN <br>
+<input type="range" min="0" max="255" id="packetblue" onmouseup="quickled()"> BLUE <br>
+<button onclick="sendpacket('r '+document.getElementById('packetdestination').value+' 0 100 63 0 0 0')">Clear</button>
+
 </div>
-    Send to LCD  <select id="packetlcd"></select>
+<div id="lcdoptions">
+    <select id="lcdcommand" onchange="createpacketoptionrefresh(0)">
+        <option value=0>Set Backlight</option>
+        <option value=1>Clear Screen</option>
+        <option value=2>Draw Line</option>
+        <option value=5>Rectangle</option>
+        <option value=6>Rectangle (Solid)</option>
+        <option value=7>Text (Small)</option>
+        <option value=8>Text (Medium)</option>
+        <option value=9>Text (Large)</option>
+
+    </select>
+    <select id="lcdcolor">
+        <option value = "0">White</option>
+        <option value = "16">Blue</option>
+        <option value = "32">Red</option>
+        <option value = "48">Green</option>
+        <option value = "64">Cyan</option>
+        <option value = "80">Magenta</option>
+        <option value = "96">Yellow</option>
+        <option value = "112">Black</option>
+
+        </option>
 
 
+
+    </select>
+    <input type="range" min="0" max="255" id="backlight" onchange="quickbacklight()" ><br>
+    <input id="startx" placeholder="Start X">
+    <input id="starty" placeholder="Start Y">
+    <input id="endx" placeholder="End X">
+    <input id="endy" placeholder="End Y">
+    <input id="lcdtext" placeholder="Text">
+</div>
 </select>
-
+<button onclick="buildpacket()">GO</button>
 </div>
 <div  class="sensorinfo" id="editeeprom" style="display:none;">
-
+    <button onclick ="document.getElementById('startup').style.display = (document.getElementById('startup').style.display =='none'?'inline':'none')">Show/Hide Startup</button>
+    <button onclick ="document.getElementById('timer1').style.display = (document.getElementById('timer1').style.display =='none'?'inline':'none')">Show/Hide Timer1</button> <br>
+    <button onclick ="document.getElementById('event').style.display = (document.getElementById('event').style.display =='none'?'inline':'none')">Show/Hide Events</button> <br>
+    <div style="display:inline-block">
+    Timer 0<br>
+    <input type="range" min="0" max="255" id="t0ms" onchange="document.getElementById('t0m').value=this.value" > Min <br>
+    <input type="range" min="0" max="59.75" step=".25" id="t0ss" onchange="document.getElementById('t0s').value=this.value" > Seconds <br>
+    Min <input type="number" id="t0m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t0ms').value=this.value">
+    Sec <input type="number" id="t0s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t0ss').value=this.value"><br>
+        <button onclick="savetimer()">Save</button>
+    </div>
+    <div style="display:inline-block">
+        Timer 1<br>
+        <input type="range" min="0" max="255" id="t1ms" onchange="document.getElementById('t1m').value=this.value" > Min <br>
+        <input type="range" min="0" max="59.75" step=".25" id="t1ss" onchange="document.getElementById('t1s').value=this.value" > Seconds <br>
+        Min <input type="number" id="t1m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t1ms').value=this.value">
+        Sec <input type="number" id="t1s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t1ss').value=this.value"><br>
+        <button onclick="savetimer()">Save</button>
+    </div>
+    <div style="display:inline-block">
+        Timer 2<br>
+        <input type="range" min="0" max="255" id="t2ms" onchange="document.getElementById('t2m').value=this.value" > Min <br>
+        <input type="range" min="0" max="59.75" step=".25" id="t2ss" onchange="document.getElementById('t2s').value=this.value" > Seconds <br>
+        Min <input type="number" id="t2m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t2ms').value=this.value">
+        Sec <input type="number" id="t2s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t2ss').value=this.value"><br>
+        <button onclick="savetimer()">Save</button>
+    </div>
+    <div style="display:inline-block">
+        Timer 3<br>
+        <input type="range" min="0" max="255" id="t3ms" onchange="document.getElementById('t3m').value=this.value" > Min <br>
+        <input type="range" min="0" max="59.75" step=".25" id="t3ss" onchange="document.getElementById('t3s').value=this.value" > Seconds <br>
+        Min <input type="number" id="t3m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t3ms').value=this.value">
+        Sec <input type="number" id="t3s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t3ss').value=this.value"><br>
+        <button onclick="savetimer()">Save</button>
+    </div>
+    <div id="startup">
     0-14 startup<br>
-    15-29 Timer 0<br>
+    <%for (var i=0; i<15; ++i){%>
+    <%="EEprom"+ i%><input id=<%='e'+i%>>
+    <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
+    <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+    <%}%>
+
+</div>
+    <div id="timer1">
+        15-29 Timer 0<br>
+        <%for (var i=15; i<30; ++i){%>
+        <%="EEprom"+ i%><input id=<%='e'+i%>>
+        <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <%}%>
+        Timer 1<br>
+        <%for (var i=30; i<33; ++i){%>
+        <%="EEprom"+ i%><input id=<%='e'+i%>>
+        <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <%}%>
+        Timer 2<br>
+        <%for (var i=33; i<36; ++i){%>
+        <%="EEprom"+ i%><input id=<%='e'+i%>>
+        <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <%}%>
+        Timer 3<br>
+        <%for (var i=36; i<39; ++i){%>
+        <%="EEprom"+ i%><input id=<%='e'+i%>>
+        <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <%}%>
+
+    </div>
+    <div id="event">
+        <br>
+        Menu Enter <br>
+        EEprom 39<input id="e39">
+        <button onclick="document.getElementById('e39').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(39)">Write to EEprom</button>    <br>
+        EEprom 40<input id="e40">
+        <button onclick="document.getElementById('e40').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(40)">Write to EEprom</button>    <br>
+
+        Menu 1 <br>
+        EEprom 41<input id="e41">
+        <button onclick="document.getElementById('e41').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(41)">Write to EEprom</button>    <br>
+        EEprom 42<input id="e42">
+        <button onclick="document.getElementById('e42').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(42)">Write to EEprom</button>    <br>
+        Menu 2 <br>
+        EEprom 43<input id="e43">
+        <button onclick="document.getElementById('e43').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(43)">Write to EEprom</button>    <br>
+        EEprom 44<input id="e44">
+        <button onclick="document.getElementById('e44').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(44)">Write to EEprom</button>    <br>
+        Menu 3 <br>
+        EEprom 45<input id="e45">
+        <button onclick="document.getElementById('e45').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(45)">Write to EEprom</button>    <br>
+        EEprom 46<input id="e46">
+        <button onclick="document.getElementById('e46').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(46)">Write to EEprom</button>    <br>
+        Menu 4 <br>
+        EEprom 47<input id="e47">
+        <button onclick="document.getElementById('e47').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(47)">Write to EEprom</button>    <br>
+        EEprom 48<input id="e48">
+        <button onclick="document.getElementById('e48').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(48)">Write to EEprom</button>    <br>
+        Menu 5 <br>
+        EEprom 49<input id="e49">
+        <button onclick="document.getElementById('e49').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(49)">Write to EEprom</button>    <br>
+        EEprom 50<input id="e50">
+        <button onclick="document.getElementById('e50').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(50)">Write to EEprom</button>    <br>
+        Menu Exit <br>
+        EEprom 51<input id="e51">
+        <button onclick="document.getElementById('e51').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(51)">Write to EEprom</button>    <br>
+        EEprom 52<input id="e52">
+        <button onclick="document.getElementById('e52').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(52)">Write to EEprom</button>    <br>
+
+        Contact Closed <br>
+        EEprom 53<input id="e53">
+        <button onclick="document.getElementById('e53').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(53)">Write to EEprom</button>    <br>
+        EEprom 54<input id="e54">
+        <button onclick="document.getElementById('e54').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(54)">Write to EEprom</button>    <br>
+        EEprom 55<input id="e55">
+        <button onclick="document.getElementById('e55').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(55)">Write to EEprom</button>    <br>
+        Contact Opened <br>
+        EEprom 56<input id="e56">
+        <button onclick="document.getElementById('e56').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(56)">Write to EEprom</button>    <br>
+        EEprom 57<input id="e57">
+        <button onclick="document.getElementById('e57').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(57)">Write to EEprom</button>    <br>
+        EEprom 58<input id="e58">
+        <button onclick="document.getElementById('e58').value = buildpacket(); ">Grab</button>
+        <button onclick="writetoeeprom(58)">Write to EEprom</button>    <br>
+
+    </div>
+
     <canvas id="screen" width="128" height="160" style="border:1px solid #000000;" tabindex="1">
 
     </canvas>
+    <br>
 </div>
+
 <div  class="sensorinfo" id="editsettings" style="display:none;">
    <h2>Sensors</h2>
     <button onclick="addnewgatherer()">New</button>
@@ -68,8 +274,8 @@ Packet Type <select id="packettype"></select>
     <%}%>
     <%-ejs.optiondraw("Light","Light")%>
     <%-ejs.optiondraw("Humidity","Relative Humidity")%>
-    <%-ejs.optiondraw("Power0","Power CT1")%>
-    <%-ejs.optiondraw("Power1","Power CT0")%>
+    <%-ejs.optiondraw("Power0","Power CT0")%>
+    <%-ejs.optiondraw("Power1","Power CT1")%>
     <%-ejs.optiondraw("Vin","Processor Volatage")%>
     <%-ejs.optiondraw("Contact","Contact Sensor")%>
     <%-ejs.optiondraw("IR","IR Temperature Sensor")%>
@@ -92,193 +298,23 @@ Packet Type <select id="packettype"></select>
 </html>
 
 <script>
- function quickled(){
-    var selectedleds = ((document.getElementById("led1").checked == true   ) ? 1 : 0)+((document.getElementById("led2").checked == true   ) ? 2 : 0)+((document.getElementById("led3").checked == true   ) ? 4 : 0)+((document.getElementById("led4").checked == true   ) ? 8 : 0)+((document.getElementById("led5").checked == true   ) ? 16 : 0)+((document.getElementById("led6").checked == true   ) ? 32 : 0);
-     var temp = '';
-     temp = temp + 'r '+document.getElementById("packetdestination").value+' 100 '+selectedleds+' ';
-     temp=temp + document.getElementById("packetred").value+" "+ document.getElementById("packetgreen").value+ " "+document.getElementById("packetblue").value+ '\n';
-     var sendobj = {};
-     sendobj.packettype="packet";
-     sendobj.data = temp;
-  //   websocket.send('{"packettype":"packet","data":"r 6 100 0 222 128 128\n"}');
-     websocket.send(JSON.stringify(sendobj));
-//console.log(JSON.stringify(sendobj));
- }
-    function createpacket(){
-     viewtoggle('createpacket');
-     document.getElementById("packetdestination").innerHTML=document.getElementById("selectedgatherer").innerHTML;
-     document.getElementById("packetsource").innerHTML=document.getElementById("selectedgatherer").innerHTML;
-     createpacketoptionrefresh();
- }
- function createpacketoptionrefresh(){
-var source = document.getElementById("packetsource").value;
-var dest = document.getElementById("packetdestination").value;
-var type = document.getElementById("packettype");
-var lcd =  document.getElementById("packetlcd");
-var s = gatherer.id[source].sensor;
-var d = gatherer.id[dest].sensor;
-var temp='';
-for (var prop in d){
-    console.log(d[prop].available);
-    if (d[prop].available){
-        temp=temp+'<option value='+d[prop].packettype+'>Request '+d[prop].name+'('+prop+')</option>';
-
-    }
-
-}
-     temp=temp+'<option value=200>SET RGB Leds</option>';
-     type.innerHTML=temp;
-temp =''
-     temp='<option value=0> No</option>';
-     console.log(type);
-     if(type.value >49 && type.value <59){
-         temp=temp+'<option value=1>Small Font with decimal</option>';
-         temp=temp+'<option value=2>Small Font without decimal</option>';
-         temp=temp+'<option value=3>Medium Font with decimal</option>';
-         temp=temp+'<option value=4>Medium Font without decimal</option>';
-         temp=temp+'<option value=5>Large Font with decimal</option>';
-         temp=temp+'<option value=6>Large Font without decimal</option>';
-
-     }
-
-     lcd.innerHTML = temp;
- }
- function readsensors(){
-
-     if (gatherer.id[document.getElementById("ID").value].sensor == undefined){
-         gatherer.id[document.getElementById("ID").value].sensor={};
-     }
-     for (var i=0; i<8;++i){
-     writegatherertohtml("Temp"+i);
-     }
-     writegatherertohtml("Light");
-     writegatherertohtml("Power0");
-     writegatherertohtml("Power1");
-     writegatherertohtml("Humidity");
-     writegatherertohtml("Contact");
-     writegatherertohtml("Vin");
-     writegatherertohtml("IR");
-
- }
- function writegatherertohtml(insensor){
-     var id=document.getElementById("ID").value;
-     if (gatherer.id[id].sensor[insensor] == undefined){
-         gatherer.id[id].sensor[insensor] = {};
-         gatherer.id[id].sensor[insensor].available = false;
-         gatherer.id[id].sensor[insensor].name = "";
-     }
-     document.getElementById(insensor+".available").checked = gatherer.id[id].sensor[insensor].available;
-     document.getElementById(insensor+".name").value =gatherer.id[id].sensor[insensor].name;
- }
- function writesensors(){
-     var id=document.getElementById("ID").value;
-        for (var i=0; i<8;++i){
-        readhtmltogatherer("Temp"+i,50,i);
-        }
-        readhtmltogatherer("Light",51,0);
-         readhtmltogatherer("Power0",52,9);
-         readhtmltogatherer("Power1",53,9);
-         readhtmltogatherer("Humidity",54,0);
-         readhtmltogatherer("Vin",55,0);
-         readhtmltogatherer("Contact",56,0);
-         readhtmltogatherer("IR",57,0)
-         savesettings();
-     }
-function readhtmltogatherer(insensor,inpackettype,inpacketoption){
-    var id=document.getElementById("ID").value;
-    if (gatherer.id[id].sensor[insensor] == undefined){
-        gatherer.id[id].sensor[insensor] = {};
-        gatherer.id[id].sensor[insensor].available = false;
-        gatherer.id[id].sensor[insensor].name = "";
-    }
-    gatherer.id[id].sensor[insensor].available=document.getElementById(insensor+".available").checked;
-    gatherer.id[id].sensor[insensor].name=  document.getElementById(insensor+".name").value;
-    gatherer.id[id].sensor[insensor].packettype = inpackettype;
-    gatherer.id[id].sensor[insensor].packetoption = inpacketoption;
-}
-
- function validateselectedgatherer(x){
-     document.getElementById("ID").value= x.value;
-     document.getElementById("NAME").value= gatherer.id[x.value].name;
-    readsensors();
- }
-
-function validateid(x){
-   // console.log(x.value);
-    if (x.value < 256 && x.value > 0){
-       document.getElementById("selectedgatherer").value = x.value;
-       if (typeof(gatherer.id[document.getElementById("ID").value]) == "object"){
-        document.getElementById("NAME").value=gatherer.id[document.getElementById("ID").value].name;
-        return;
-       }else
-    { document.getElementById("NAME").value="Enter Name"
-    }
-
-    if (typeof(gatherer.id[document.getElementById("ID").value]) != "object"){
-        gatherer.id[document.getElementById("ID").value]={};
-        gatherer.id[document.getElementById("ID").value].sensor={};
-        gatherer.id[document.getElementById("ID").value].name=document.getElementById("NAME").value;
-        writesensors(); //writes to values of the sensors to gatherer object
-        //savesettings(); //save to gatherer object to the collection
-        refreshselectedgatherer();
-
-    }
-    }
-    else{
-        //console.log(x);
-        x.value=document.getElementById("selectedgatherer").value
-        document.getElementById("NAME").value=gatherer.id[document.getElementById("ID").value].name;
-        alert("ID Must be between 1 and 255");
-        return;
-
-
-    }
-    document.getElementById("selectedgatherer").value = x.value;
-}
-function validatename(x){
-    if (x.value.trim().length == 0){
-       // x.value=document.getElementById("selectedgatherer").value.text.trim().substr(0,10);
-        //x.value=document.getElementById("selectedgatherer").options[document.getElementById("selectedgatherer").selectedIndex].text;
-        x.value = "Enter Name";
-        alert("Name Cannot Be Empty");
-        return;
-    }
-    x.value = x.value.trim().substr(0,10);
-    if (typeof(gatherer.id[document.getElementById("ID").value]) != "object"){
-        gatherer.id[document.getElementById("ID").value]={};
-    }
-    gatherer.id[document.getElementById("ID").value].name=document.getElementById("NAME").value;
-    writesensors();
-
-    refreshselectedgatherer();
-    document.getElementById("selectedgatherer").value = document.getElementById("ID").value;
-}
-function refreshselectedgatherer(){
-    var temp=""
-    for (var prop in gatherer.id)
-    {
-        temp = temp+'<option value ="'+prop+'">'+gatherer.id[prop].name+'('+prop+')'+'</option>'
-
-    }
-
-
-    document.getElementById("selectedgatherer").innerHTML=temp;
-
-
-}
-
-function addnewgatherer(){
-    var id=document.getElementById("ID");
-    var name=document.getElementById("NAME");
-    id.value="";
-    name.value=""
-}
     function onload(){
         WebSocketSetup(); // start the websocket
         readsensors(); // populate html with gatherer values
+        document.getElementById("x1").addEventListener("mousedown",mousedown,false);
+        document.getElementById("x1").addEventListener("mouseup",mouseup,false);
+        document.getElementById("x1").addEventListener("mouseout",mouseup,false);
+        document.getElementById("x1").addEventListener("mousewheel",mousewheel,false);
       //  loadscreen(); //init lcd screen canvas
+           mdown = false;
+        mouse = {};
+        d={};
+        d.log={};
+        d.avg1={};
+        d.avg60={};
+        d.avg1440={};
     }
-    var gatherer=<%-JSON.stringify(gathererSettings)%>; // load the settings from the setting collection
+    var gatherer=<%-JSON.stringify(gathererSettings)%> // load the settings from the setting collection
     window.addEventListener("load",onload, false);
 </script>
 <style>
