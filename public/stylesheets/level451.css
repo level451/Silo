@@ -1,0 +1,13 @@
+#graphcontrols {
+    border:1px solid #000000;
+    width:400;
+}
+#overviewgraphdiv{
+    position: relative;
+}
+#graphdiv{
+    position: relative;
+}
+input[type=number].minmax{
+    width : 50px;
+}

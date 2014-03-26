@@ -78,144 +78,7 @@ function drawgauage(id,value){
     c.fillText(id.substring(0,id.indexOf("_")),0,center*1.5)
 }
 
-function msghandler(indata){
-    s=JSON.parse(indata);
-    //console.log(s);
-    if (s.dataType == "Serial")
-    {
-        delete s.dataType;
-        var id = s.ID;
-        delete s.ID;
-        var gauges = document.getElementById("gauges");
-        var gathererid = document.getElementById("gatherer"+id);
-        if (gathererid == null)
-        {
-            console.log("Gatherer "+id+" no div found");
-            gauges.innerHTML = gauges.innerHTML + '<div class="sensorinfo" height="250px" id="gatherer'+id+'"> Sensor'
-            gathererid = document.getElementById("gatherer"+id);
-        }
 
-        for(var sensors in s){
-            sensorid = document.getElementById(sensors);
-            if (sensorid == undefined){
-                gathererid.innerHTML = gathererid.innerHTML + '<canvas id="'+sensors+'" width="200" height="150"></canvas>'
-                console.log("creating:"+sensors)
-                // create canvas in div
-
-            }
-            drawgauage(sensors,s[sensors]);
-        }
-
-    }
-    if (s.packettype == "query")
-    {
-    if (s.options == "init14"){
-
-
-
-
-        d.avg60= combineData(d.avg1, s.data);
-        d.startTime= s.startTime;
-        d.endTime = s.endTime;
-        d.data= d.avg60;
-        d.dataoverview= d.avg60;
-
-
-
-
-
-        var st = new Date(s.startTime).getTime();
-        var et = new Date(s.endTime).getTime();
-        if (et> document.getElementById("stime").max){
-            document.getElementById("stime").max = et;
-            document.getElementById("etime").max = et;
-            console.log("starttime",new Date(st));
-        }
-        if (st< document.getElementById("etime").min || document.getElementById("etime").min== 0){
-            document.getElementById("stime").min = st;
-            document.getElementById("etime").min = st;
-            console.log("endtime",new Date(et));
-        }
-        document.getElementById("stime").value = st+((et-st) *.85);
-        document.getElementById("etime").value = et;
-
-        zoomgraph();
-        query('log',new Date(document.getElementById('stime').value*1),new Date(document.getElementById('etime').value*1));
-
-
-    }
-
-
-
-
-
-     if(s.type=="avg1"){
-
-
-
-
-         d.avg1= combineData(d.avg1, s.data);
-         d.startTime= s.startTime;
-         d.endTime = s.endTime;
-         d.data= d.avg1;
-         d.dataoverview= d.avg1;
-
-
-
-
-
-        var st = new Date(s.startTime).getTime();
-        var et = new Date(s.endTime).getTime();
-        if (et> document.getElementById("stime").max){
-            document.getElementById("stime").max = et;
-            document.getElementById("etime").max = et;
-            console.log("starttime",new Date(st));
-        }
-         if (st< document.getElementById("etime").min || document.getElementById("etime").min== 0){
-             document.getElementById("stime").min = st;
-             document.getElementById("etime").min = st;
-             console.log("endtime",new Date(et));
-         }
-        document.getElementById("stime").value = st+((et-st) *.9);
-        document.getElementById("etime").value = et;
-
-        zoomgraph();
-        }
-        if(s.type=="log"){
-
-            var st = new Date(s.startTime);
-            var et = new Date(s.endTime);
-            for (var i = 1; i<d.data.length;i+=1){
-                if (st<=new Date(d.data[i].Time)){
-                    var startelement = i;
-                    break;
-
-                }
-            }
-            for (var i = d.data.length-1; i>1 ;i-=1){
-                if (et>=new Date(d.data[i].Time)){
-                    var endelement = i;
-                    break;
-
-                }
-            }
-            var temp = d.data.slice(endelement+1); // save the last half
-            var starttemp = d.data.slice(0,startelement);
-            d.data= starttemp.concat(s.data.concat(temp));
-
-           zoomgraph();
-
-            console.log(st,et,"start",startelement,"end",endelement,"elements",endelement-startelement);
-
-
-
-            zoomgraph();
-        }
-    }
-
-
-
-}
 function sendpacket(temp){ websocket.send('{"packettype":"packet","data":"'+temp+'\\n"}');}
 function query(type,starttime,endtime,opt){
 
@@ -234,11 +97,11 @@ function findfirst(d,id){ for (var i = 1; i<d.length;++i){ if (d[i][id]){return 
 
 }
 function zoomgraph(){
-    var st = new Date(document.getElementById("stime").value*1);
-    var et = new Date(document.getElementById("etime").value*1);
-    var stm = new Date(document.getElementById("stime").min*1);
-    var etm = new Date(document.getElementById("etime").max*1);
-    drawgraph(d.dataoverview,"x", stm, etm,st,et);
+    var st =document.getElementById("stime").value;
+    var et = document.getElementById("etime").value;
+    var stm =document.getElementById("stime").min;
+    var etm =document.getElementById("etime").max;
+    drawgraph(d.data,"overviewindicator", stm, etm,st,et);
     drawgraph(d.data,"x1", st, et);
 
 
@@ -246,9 +109,9 @@ function zoomgraph(){
 
 function drawgraph(d,id,s,e,sz,ez){
 
-
-    s = new Date(s);
-    e = new Date(e);
+    var temptime = new Date();
+    //s = new Date(s);
+    //e = new Date(e);
 
 
 
@@ -265,6 +128,7 @@ function drawgraph(d,id,s,e,sz,ez){
 if (sz){
 ctx.fillRect(0+rightoffset,0,(sz-s)*ppms,bottomy);
 ctx.fillRect((ez-s)*ppms+rightoffset,0,canvas.width,bottomy);
+return;
 }
 
     ctx.beginPath();
@@ -272,23 +136,55 @@ ctx.fillRect((ez-s)*ppms+rightoffset,0,canvas.width,bottomy);
    // ctx.save();
    // ctx.transform(1,0,0,-1,0,canvas.height);
     //ctx.moveTo(0,findfirst(d,"IR_1"))
-    for (var i = 1; i<d.length;++i){
-        if (s<=new Date(d[i].Time)){
-            var startelement = i;
-            break;
+    //find the start element
+    if (startelement == 0 || d[startelement].Time < s){
+           for (var i = startelement; i<d.length;++i){
 
+               if (s<= d[i].Time){
+                 startelement = i;
+                break;
+
+            }
+        }
+    }else
+    {
+        for (var i = startelement; i>1 ;--i){
+            startelement = 0;
+            if (s>d[i].Time){
+                startelement = i+1;
+                break;
+
+            }
         }
     }
-    for (var i = d.length-1; i>1 ;--i){
-        if (e>=new Date(d[i].Time)){
-            var endelement = i;
-            break;
+  if (endelement == 0){ endelement = d.length-1}
+console.log("endele",endelement);
+    if (endelement ==  d.length || d[endelement].Time < e){
+        console.log("useing a",(d[endelement].Time-e)/1000,endelement);
+        for (var i = endelement; i<d.length;++i){
+            endelement = d.length-1;
+            if (e<= d[i].Time){
+                endelement = i;
+                break;
 
+            }
+        }
+    }else
+    {
+        console.log("useing b",(d[endelement].Time-e)/1000,endelement);
+        for (var i = endelement; i>1 ;--i){
+
+            if (e > d[i].Time ){
+                endelement = i+1;
+                break;
+
+            }
         }
     }
+
     for (var i = startelement; i<endelement;++i){
        if (d[i].IR_1){
-           ctx.lineTo(((new Date(d[i].Time)-s)*ppms)+rightoffset,getx(d[i].IR_1,10,100,bottomy));
+           ctx.lineTo((((d[i].Time)-s)*ppms)+rightoffset,getx(d[i].IR_1,10,100,bottomy));
 
            }
 }
@@ -297,7 +193,7 @@ ctx.fillRect((ez-s)*ppms+rightoffset,0,canvas.width,bottomy);
     ctx.beginPath();
     for (var i = startelement; i<endelement;i=++i){
         if (d[i].Temp0_1){
-            ctx.lineTo((new Date(d[i].Time)-s)*ppms+rightoffset,getx(d[i].Temp0_1,20,100,bottomy));
+            ctx.lineTo(((d[i].Time)-s)*ppms+rightoffset,getx(d[i].Temp0_1,20,100,bottomy));
 
         }
     }
@@ -306,7 +202,7 @@ ctx.fillRect((ez-s)*ppms+rightoffset,0,canvas.width,bottomy);
     for (var i = startelement; i<endelement;i=++i){
 
         if (d[i].Light_1){
-           ctx.lineTo((new Date(d[i].Time)-s)*ppms+rightoffset,getx(d[i].Light_1,0,1000,bottomy));
+           ctx.lineTo(((d[i].Time)-s)*ppms+rightoffset,getx(d[i].Light_1,0,1000,bottomy));
 
         }
     }
@@ -314,7 +210,7 @@ ctx.fillRect((ez-s)*ppms+rightoffset,0,canvas.width,bottomy);
         ctx.beginPath();
         for (var i = startelement; i<endelement;++i){
             if (d[i].Power0_6){
-                ctx.lineTo((new Date(d[i].Time)-s)*ppms+rightoffset,getx(d[i].Power0_6,100,600,bottomy));
+                ctx.lineTo(((d[i].Time)-s)*ppms+rightoffset,getx(d[i].Power0_6,100,600,bottomy));
 
             }
 
@@ -322,9 +218,10 @@ ctx.fillRect((ez-s)*ppms+rightoffset,0,canvas.width,bottomy);
 
 
     ctx.stroke();
+    console.log(new Date()-temptime);
    // ctx.restore();
 }
-function getx(d,min,max,height){
+function gety(d,min,max,height){
     ppu = height/(max-min);  //pixels per unit
 
     return (height-((d-min)*ppu));
@@ -404,22 +301,25 @@ function combineData(dold,dnew){
     console.log(st,et);
     for (var i = 1; i<dold.length;i+=1){
         if (st<=new Date(dold[i].Time)){
-            var startelement = i;
+            var se = i;
             break;
 
         }
     }
     for (var i = dold.length-1; i>1 ;i-=1){
         if (et>=new Date(dold[i].Time)){
-            var endelement = i;
+            var ee = i;
             break;
 
         }
     }
-    var temp = dold.slice(endelement+1); // save the last half
-    var starttemp = dold.slice(0,startelement);
+    var temp = dold.slice(ee+1); // save the last half
+    var starttemp = dold.slice(0,se);
     return starttemp.concat(dnew.concat(temp));
 
 
 
+}
+function sensorNametoUserName(sn){
+    return gatherer.id[ sn.substr(sn.indexOf("_")+1,1)].sensor[sn.substring(0,sn.indexOf("_"))].name
 }

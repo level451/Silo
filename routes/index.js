@@ -18,4 +18,15 @@ exports.info = function(req, res){
     });
 
 };
+exports.graph = function(req, res){
+    console.log("here");
+    cSettings.findOne({"type":"gatherer"},{"_id":0},function(err,result){
+        if (!result){ gathererSettings={};}else{gathererSettings=result;}
+
+        res.render('graph.ejs', { title: 'Graph' , settings: gathererSettings });
+
+    });
+
+};
+
 

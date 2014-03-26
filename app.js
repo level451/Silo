@@ -29,9 +29,11 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-app.get('/', routes.index);
+app.get('/', routes.graph);
 app.get('/led', routes.led);
 app.get('/info', routes.info);
+app.get('/graph', routes.graph);
+
 //app.get('/users', user.list);
 
 http.createServer(app).listen(app.get('port'), function(){

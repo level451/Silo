@@ -1,0 +1,379 @@
+<!DOCTYPE HTML>
+
+<script src="/javascripts/level451web.js"> </script>
+<script src="/javascripts/ReconnectingWebsocket.js"> </script>
+<script src="/javascripts/graph.js"> </script>
+<link rel="stylesheet" type="text/css" href="/stylesheets/level451.css">
+
+<html>
+
+
+
+<html>
+
+<div id="graphheader">
+
+<button onclick="query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14',new Date());">query 14 days 1 hour</button>
+<select id="graph" onchange=""></select>
+<select ID="selectedgatherer" onchange="refreshavailablesensors(this)">
+    <%for (var prop in gathererSettings.id){%>
+    <option value =<%=prop%>><%=gathererSettings.id[prop].name+"("+prop+")"%></option>
+    <%}%>
+</select>
+
+    <select id="availablesensors" onchange=""></select>
+    <button onclick="addsensortograph()">Add</button>
+    <button onclick="savesettings()">Save</button>
+    <button onclick="query('avg60',new Date(g.start.value*1),new Date(g.end.value*1));">splice hour</button>
+    <button onclick="query('avg1',new Date(g.start.value*1),new Date(g.end.value*1));">splice min</button>
+    <button onclick="query('log',new Date(g.start.value*1),new Date(g.end.value*1));">splice</button>
+</div>
+<div id="graphcontrols">
+    <select id="graphitems" size="5" width = "100" onchange="graphItemsOnChange()"></select>
+    <input type="color" id="color" onchange="gc_change()">
+    <input class = "minmax" type="number"   step="1" id="min"  onchange="gc_change()" > Min
+    <input class = "minmax"type="number"  step="1" id="max"   onchange="gc_change()" > Max
+
+    <button onclick="autominmax(document.getElementById('graphitems').value)">Autoscale</button>
+
+    <div>
+    <input class = "minmax" type="number"   step="1" id="gmin"  onchange="gc_change()" > Graph Min
+    <input class = "minmax" type="number"  step="1" id="gmax"   onchange="gc_change()" > Graph Max
+    <input class = "minmax" type ="number" default ="1" id="multiplier"onchange="gc_change()"> Multiplier
+    <input type="checkbox" id="usegraphrange" onchange="gc_change()" >Use Graph Range
+    </div>
+
+
+</div>
+<div id="overviewgraphdiv" >
+
+    <canvas id="g1_overview" width="1200" height="100" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 1;" tabindex="1"></canvas>
+    <canvas id="g1_overviewindicator" width="1200" height="100" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 0;" tabindex="1"></canvas><br>
+
+<div>
+<input type="range" min="0" max="255" step="30000" id="g1_start" onchange="g.drawMain()"> start
+<input type="range" min="0" max="255" step="30000" id="g1_end"  onchange="g.drawMain()" > end <br>
+<div id  = "buttons"></div>
+</div>
+</div>
+<div id="graphdiv">
+    <canvas id="g1_maingraph" width="1200" height="400" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 1;" tabindex="1"></canvas>
+    <canvas id="g1_maingraphscale" width="1200" height="400" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 0;" tabindex="1"></canvas>
+
+</div>
+</body>
+</html>
+<script>
+    window.addEventListener("load",onload, false);
+    var gatherer=<%-JSON.stringify(gathererSettings)%> // load the settings from the setting collection
+    function onload(){
+        WebSocketSetup(); // start the websocket
+        g = new graph("g1");
+
+        mouse={};
+        g.maingraph.addEventListener("mousedown", g.mousedown,false);
+        g.maingraph.addEventListener("mouseup", g.mouseup,false);
+        g.maingraph.addEventListener("mouseout", g.mouseup,false);
+        g.maingraph.addEventListener("mousewheel", g.mousewheel,false);
+        g.maingraph.addEventListener("touchstart", g.touchstart,false);
+        g.maingraph.addEventListener("touchstop", g.touchstop,false);
+        window.addEventListener("resize",resize,false);
+
+        if (gatherer.graph == undefined){
+        gatherer.graph = [];
+        gatherer.graph[0] = {};
+        gatherer.graph[0].name="Graph 0";
+        gatherer.graph[0].sensor={};
+
+
+    }
+        refreshavailablesensors();
+        //resize();
+    }
+    function msghandler(indata){
+        s=JSON.parse(indata);
+        //console.log(s);
+        if (s.dataType == "Serial")
+        {
+           // console.log("Serial Data", s);
+            s.Time = new Date().getTime();
+            delete s.dataType;
+          //  console.log(s);
+            g.data.push(s);
+
+
+            g.end.max = s.Time+120000
+            g.end.value = s.Time+120000;
+            g.endelement = g.data.length-1;
+           // g.drawOverview();
+            g.drawMain();
+        }
+        if (s.packettype == "query") // got query data from silo
+        {
+            // convert all the stupid text dates to numbers
+            for (i=0;i< s.data.length;++i){
+                s.data[i].Time = new Date(s.data[i].Time).getTime();
+            }
+            g.addData(s.data,new Date(s.startTime).getTime(), new Date(s.endTime).getTime());
+
+            g.drawOverview();
+            if (s.options == "init14"){
+                g.end.value = g.end.max;
+                g.start.value = g.end.value-(24*60*60000);
+                g.drawMain();
+                query('avg1',new Date(g.start.value*1),new Date(g.end.max*1));
+               // query('avg1',new Date(g.start.min*1),new Date(g.end.value*1));
+                return;
+
+            }
+
+
+
+            if(s.type=="avg60"){
+
+                g.drawMain();
+
+
+            }
+            if(s.type=="avg1"){
+                g.drawMain();
+                refreshbuttons();
+                graphItemsOnChange();
+
+
+            }
+             if(s.type=="log"){
+                g.drawMain();
+            }
+        }
+
+
+
+    }
+function refreshavailablesensors(){
+   // var type = document.getElementById("availablesensors");
+var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgatherer").value].sensor)   ;
+    var temp='';
+    for (var prop in selectedgatherersensor){
+        if (selectedgatherersensor[prop].available){
+            temp=temp+'<option value="'+prop+'">'+selectedgatherersensor[prop].name+'('+prop+')</option>';
+
+        }
+
+    }
+    document.getElementById("availablesensors").innerHTML=temp;
+
+    temp='';
+    for (var prop in gatherer.graph){
+           temp=temp+'<option value="'+prop+'">'+gatherer.graph[prop].name+'('+prop+')</option>';
+        }
+    document.getElementById("graph").innerHTML=temp;
+    temp='';
+    for (var prop in gatherer.graph[document.getElementById("graph").value].sensor)
+    {
+       console.log("prop",prop)
+        temp=temp+'<option value="'+prop+'">'+sensorNametoUserName(prop)+'('+prop+')'+'</option>';
+
+    }
+   console.log("graph items",temp)
+    document.getElementById("graphitems").innerHTML=temp;
+    var temp='';
+
+    for (var prop in gatherer.graph[document.getElementById("graph").value].sensor)
+    {
+        console.log("prop",prop)
+        temp=temp+'<button type="button" id="b_'+prop+'" data-sensor="'+prop+'" onclick="showHide(this);">'+sensorNametoUserName(prop)+'('+prop+')</button>';
+
+    }
+    temp=temp+'<button type="button" data-sensor="" onclick="selectNone();">Select None</button>';
+
+    document.getElementById("buttons").innerHTML=temp;
+}
+    function addsensortograph(){
+        if (gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("availablesensors").value+'_'+document.getElementById("selectedgatherer").value] == undefined)
+        {
+            // wow gatherer.graph[id].sensor[sensor]
+            var id=document.getElementById("graph").value;
+            var sensor =document.getElementById("availablesensors").value+'_'+document.getElementById("selectedgatherer").value;
+            gatherer.graph[id].sensor[sensor] = {};
+            gatherer.graph[id].sensor[sensor].visible = true;
+            autominmax(sensor);
+
+        }
+        refreshavailablesensors();
+
+        g.drawMain();
+        g.drawOverview();
+    }
+    function autominmax(sensor){
+        var id=document.getElementById("graph").value;
+        var min= 99999;
+        var max=-99999;
+        g.drawMain();
+
+        for (var i = g.startelement; i<g.endelement;++i){
+        //for (var i = 0; i<g.data.length;++i){
+           if (g.data[i][sensor] < min){
+                min = g.data[i][sensor];
+            }
+            if (g.data[i][sensor] > max){
+                max = g.data[i][sensor];
+            }
+        }
+
+        var padding = (max- min)*.1;
+        gatherer.graph[id].sensor[sensor].max = (max + padding)*gatherer.graph[id].sensor[sensor].multiplier;
+        gatherer.graph[id].sensor[sensor].min = (min - padding)*gatherer.graph[id].sensor[sensor].multiplier;
+        console.log("min", gatherer.graph[id].sensor[sensor].min,min);
+        console.log("max", gatherer.graph[id].sensor[sensor].max.max);
+       graphItemsOnChange();
+        gc_change();
+        g.drawMain();
+        g.drawscale(g.maingraphscale);
+    }
+function gc_change(){
+
+    var x = gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value];
+    if (x == undefined){return;}
+
+    x.color = document.getElementById("color").value;
+    x.min=document.getElementById("min").value;
+    x.max=document.getElementById("max").value;
+    x.multiplier = document.getElementById("multiplier").value;
+    x.usegraphrange=document.getElementById("usegraphrange").checked;
+    gatherer.graph[document.getElementById("graph").value].gmax = document.getElementById("gmax").value;
+    gatherer.graph[document.getElementById("graph").value].gmin = document.getElementById("gmin").value;
+
+    g.drawMain();
+    g.drawOverview();
+    g.drawscale(g.maingraphscale);
+
+
+}
+
+function graphItemsOnChange(){
+
+    if (document.getElementById("graphitems").value == ""){
+
+    document.getElementById("max").value="";
+    document.getElementById("min").value="";
+    document.getElementById("color").value="";
+    document.getElementById("multiplier").value="";
+    return;
+}
+    var x = gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value];
+//document.getElementById("graphitems").value;
+    for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
+    {gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;}
+    gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value].selected = true;
+    g.selected = document.getElementById("graphitems").value;
+    g.drawMain();
+
+
+    if (x == undefined){return;}
+    if (x.color != undefined){document.getElementById("color").value = x.color;}
+    if (x.max != undefined){document.getElementById("max").value=x.max;}
+    if (x.min != undefined){document.getElementById("min").value=x.min;}
+    if (x.multiplier != undefined){document.getElementById("multiplier").value=x.multiplier;}
+    if (x.usegraphrange == undefined){x.usegraphrange = false;}
+    if (gatherer.graph[document.getElementById("graph").value].gmax == undefined){document.getElementById("gmax").value = 100;}
+    if (gatherer.graph[document.getElementById("graph").value].gmin == undefined){document.getElementById("gmin").value = 0;}
+    gatherer.graph[document.getElementById("graph").value].gmax = document.getElementById("gmax").value;
+    document.getElementById("usegraphrange").checked=x.usegraphrange;
+
+    g.drawscale(g.maingraphscale);
+    refreshbuttons();
+
+}
+
+    function resize(){
+        var newwidth = g.maingraph.parentElement.clientWidth;
+        g.overviewCanvas.width = newwidth;
+        g.overviewindicatorCanvas.width = newwidth;
+        g.maingraph.width = newwidth;
+        g.maingraphscale.width = newwidth;
+console.log("resize");
+        g.drawMain();
+        g.drawOverview();
+
+    }
+
+function showHide(e){
+var data = e.dataset;
+
+    for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
+    {gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;}
+
+    if (document.getElementById("graphitems").value != data.sensor){
+        document.getElementById("graphitems").value = data.sensor;
+        var x = gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value];
+        x.visible = true;
+        x.selected = true;
+
+            }
+
+    else{
+        var x = gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value];
+        if (x.visible){
+            x.visible = false;
+            x.selected = false;
+            document.getElementById("graphitems").value = undefined;
+
+
+        }else
+        {
+            x.visible = true;
+            x.selected = true;
+
+        }
+    }
+    graphItemsOnChange();
+
+
+
+
+    g.drawMain();
+}
+function selectNone(){
+    document.getElementById("graphitems").value = undefined;
+    for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
+    {gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;
+        document.getElementById("b_"+sensor).style.color="";
+        if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].visible == true){
+        document.getElementById("b_"+sensor).style.background="";
+
+    } else
+    {
+        document.getElementById("b_"+sensor).style.background="'#FFFFFF'";
+    }
+    }
+
+   graphItemsOnChange();
+    g.drawMain();
+
+
+
+}
+function refreshbuttons(){
+
+    for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
+    {
+        if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected == true){
+            document.getElementById("b_"+sensor).style.color = gatherer.graph[document.getElementById("graph").value].sensor[sensor].color;
+            document.getElementById("b_"+sensor).style.background="#404040";
+
+        }else
+        {
+            document.getElementById("b_"+sensor).style.color="";
+            if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].visible == true){
+                document.getElementById("b_"+sensor).style.background="";
+
+            } else
+            {
+                gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;
+                document.getElementById("b_"+sensor).style.background="#FFFFFF";
+            }
+        }
+}
+}
+</script>

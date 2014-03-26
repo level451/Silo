@@ -148,6 +148,7 @@ exports.wsDataIn = function(data,id){
             try
             {
             //  console.log(resultdata);
+                console.log(webData.data.length);
 
                 websock.send(JSON.stringify(webData));
             }
@@ -165,7 +166,7 @@ exports.wsDataIn = function(data,id){
 
                 try
                 {
-                    //  console.log(resultdata);
+                      console.log(webData.data.length);
 
                     websock.send(JSON.stringify(webData));
                 }
