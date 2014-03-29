@@ -23,6 +23,8 @@ function WebSocketSetup()
 }
 function onOpen(evt) {
     console.log("CONNECTED");
+
+    query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14',new Date());
     //   doSend("WebSocket rocks");
 }
 function onClose(evt) {

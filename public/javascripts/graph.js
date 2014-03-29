@@ -16,7 +16,7 @@ function graph(graphname){
     this.drawline1 = false;
     this.line1=0;
 
-
+    this.realTime = new Date().getTime();
 
     this.touchstart=  function (e){
         console.log(e.touches[0].screenX, e.touches[0].screenY,e);
@@ -145,7 +145,6 @@ function graph(graphname){
     }
     this.draw = function(canvas,s,e,drawIndicatoronly,isoverview){
         var ctx= canvas.getContext("2d");
-
         ctx.clearRect (0 , 0 , canvas.width , canvas.height );
         var bottomy = canvas.height;
 
@@ -557,10 +556,22 @@ this.mousedown=  function (e){
         ctx.stroke();
 
     }
-    this.realtime = function(){
-        g.end.max = new Date().getTime()+60000;
-        g.end.value = g.end.max;
-        g.drawMain();
+    this.checkTime = function(){
+        var msSinceRedraw = new Date().getTime()-g.realTime;
+        var ppms =(g.maingraph.width)/(g.end.value- g.start.value); // pixels per millisecond
+        //console.log(ppms,msSinceRedraw,ppms*msSinceRedraw);
+        if (ppms*msSinceRedraw >= .25){
+            g.realTime = new Date().getTime();
+            var timeMoved = g.realTime-g.end.max;
+
+            g.end.max = g.realTime;
+            g.start.max = g.realTime;
+            g.start.value = (g.start.value*1)+timeMoved;
+
+            g.end.value = (g.end.value*1)+timeMoved;
+          g.drawMain();
+
+        }
 
     }
 }
