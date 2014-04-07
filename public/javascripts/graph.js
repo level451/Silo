@@ -5,7 +5,8 @@ function graph(graphname){
     this.maingraphscale = document.getElementById(graphname+"_maingraphscale");
     this.start = document.getElementById(graphname+"_start");
     this.end = document.getElementById(graphname+"_end");
-
+    this.height = this.maingraphscale.height;
+    this.width = this.maingraphscale.width;
     this.data=[];
     this.dataStart = 0;
     this.dataEnd = 0;
@@ -15,23 +16,52 @@ function graph(graphname){
     this.selected = undefined;
     this.drawline1 = false;
     this.line1=0;
-
+    this.shiftcount = 0;
+    this.shifttime = 0;
     this.realTime = new Date().getTime();
+    this.start.style.display="none";
+    this.end.style.display="none";
+    this.mousedown=  function (e){
 
+        e.preventDefault();
+        mouse.x = e.offsetX;
+
+        mouse.y = e.offsetY;
+        if (!g.graphButtonClick(mouse.x,mouse.y)){return}
+
+
+
+        if (mouse.mdown != true){
+            g.drawline1 = true;
+            g.line1=mouse.x;
+            g.drawMain();
+            document.getElementById("g1_maingraphscale").addEventListener("mousemove", g.mousemove,false);
+            mouse.mdown = true;
+
+        }
+
+    }
     this.touchstart=  function (e){
         console.log(e.touches[0].screenX, e.touches[0].screenY,e);
         mouse.x = e.touches[0].screenX;
         mouse.y = e.touches[0].screenY;
+
         if (mouse.touchstart != true){
-            g.maingraph.addEventListener("touchmove", g.touchmove,false);
+
             mouse.touchstart = true;
+            g.drawline1 = true;
+            g.line1=e.targetTouches[0].clientX+ e.pageX;
+            g.drawMain();
+            g.maingraphscale.addEventListener("touchmove", g.touchmove,false);
         }
         e.preventDefault();
 
     }
-    this.touchstop = function (e){
+    this.touchend = function (e){
         mouse.mdown = false;
-        document.getElementById("g1_maingraph").removeEventListener("touchmove", g.touchmove);
+        mouse.touchstart = false;
+        g.drawline1 = true;
+        document.getElementById("g1_maingraphscale").removeEventListener("touchmove", g.touchmove);
 
     }
 
@@ -60,8 +90,8 @@ function graph(graphname){
 
     this.mouseup = function (e){
         mouse.mdown = false;
-        document.getElementById("g1_maingraph").removeEventListener("mousemove", g.mousemove);
-        g.drawscale(g.maingraphscale);
+        document.getElementById("g1_maingraphscale").removeEventListener("mousemove", g.mousemove);
+        //g.drawscale(g.maingraphscale);
 
     }
     this.mousemove = function (e){
@@ -141,7 +171,9 @@ function graph(graphname){
 
             this.drawclicktime(g.line1);
         }
+        if (g.selected != ""){}
 
+        g.drawscale(g.maingraphscale);
     }
     this.draw = function(canvas,s,e,drawIndicatoronly,isoverview){
         var ctx= canvas.getContext("2d");
@@ -166,14 +198,15 @@ function graph(graphname){
             } else
             {ctx.globalAlpha = .4;}
        }
-
         if (drawIndicatoronly){
-            ctx.fillStyle="#c0c0c0";
+            ctx.fillStyle="#909090";
             var ppms =(canvas.width)/(this.dataEnd-this.dataStart); // pixels per millisecond
                ctx.fillRect(0,0,(s-this.dataStart)*ppms,bottomy);
                 ctx.fillRect((e-this.dataStart)*ppms,0,canvas.width,bottomy);
                 return;
-          }else{
+            ctx.globalAlpha = .4;
+
+        }else{
 
             var ppms =(canvas.width)/(e-s);
         } // pixels per millisecond}
@@ -252,6 +285,7 @@ var timestep = 60000*60*24 // days
         ctx.beginPath();
         ctx.lineWidth = 1;
         ctx.strokeStyle="#c0c0c0";
+        ctx.font ="10pt Arial";
         for (var i=0; i<60;i++){
 
             time = (timestep*(i+1))-(s-roundedstart);
@@ -264,7 +298,7 @@ var timestep = 60000*60*24 // days
             }else{
             a= a.toLocaleDateString();
             }
-                ctx.fillText(a,time*ppms,8);
+                ctx.fillText(a,time*ppms,10);
         }
         ctx.stroke();
 /// actual graphing start
@@ -314,9 +348,13 @@ var timestep = 60000*60*24 // days
           //if (ctx.isPointInPath(mouse.x,mouse.y)){console.log("pip",sensor)}
             ctx.stroke();
         }
+        if (!isoverview && g.selected != ''){
         // clear the area where we need to draw the scale
-
-        ctx.clearRect (0 , 0 , 80 , canvas.height );
+       ctx.globalAlpha= .75;
+        ctx.fillStyle="#ffffff";
+        ctx.fillRect (0 , 0 , 100 , canvas.height );
+        ctx.globalAlpha= 1;
+        }
 
     }
 this.drawscale = function(canvas){
@@ -324,19 +362,14 @@ this.drawscale = function(canvas){
   var alpha1 = .25;
     var ctx= canvas.getContext("2d");
 
-
+    ctx.globalAlpha=alpha;
     ctx.clearRect (0 , 0 , canvas.width , canvas.height );
-    var selected = undefined;
-    for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
-    {
-     if ( gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected == true){
-         selected = sensor;
-             break;
-     }
-    }
+ctx.fillRect(0,canvas.height-40,40,40);
+    ctx.fillRect(canvas.width-40,canvas.height-40,40,40);
+    var selected = g.selected;
     if (selected == undefined){return;}
 
-
+    if (selected == ""){return;}
     var x = gatherer.graph[document.getElementById("graph").value].sensor[selected];
     //console.log("scale selected = min max ",selected, x.min, x.max);
         if (x.color == undefined){
@@ -344,7 +377,7 @@ this.drawscale = function(canvas){
         }else{
             ctx.strokeStyle= x.color;
         }
-    ctx.globalAlpha=alpha;
+
     ctx.lineWidth= 1;
 var max = -100000;
 var min = 100000;
@@ -433,64 +466,7 @@ for (i = g.startelement; i < g.endelement; ++i){
 }
 
 
-this.mousedown=  function (e){
 
-    e.preventDefault();
-    mouse.x = e.offsetX;
-
-    mouse.y = e.offsetY;
-    if (mouse.mdown != true){
-        g.drawline1 = true;
-        g.line1=mouse.x;
-        g.drawMain();
-        document.getElementById("g1_maingraph").addEventListener("mousemove", g.mousemove,false);
-        mouse.mdown = true;
-      //  g.drawclicktime(mouse.x);
-       // console.log("elementtime",new Date(clicktime),new Date(g.data[clickelement].Time));
-  //      var data = ctx.getImageData(mouse.x-3, mouse.y-4, 8, 8).data;
- //       var val = "";
-
-//        var hit = false;
-//        for (var i = 0; i < data.length; i=i+4){
-//           val = (data[i]<<16)+(data[i+1]<<8)+data[i+2];
-//
-//            for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
-//            {
-//                var x = gatherer.graph[document.getElementById("graph").value].sensor[sensor];
-//            if (val == parseInt(x.color.substr(1),16)){
-//                //console.log("Hit",sensor);
-//                hit = true
-//                i=data.length; // exit outter loop
-//                break; //exit inner loop
-//            }
-//            }
-//
-//         }
-//    if (hit){
-//        var hitsensor = sensor;
-//        console.log("hitloop",hitsensor);
-//
-//
-//        if (gatherer.graph[document.getElementById("graph").value].sensor[hitsensor].selected == false) // wasnt previosly selected
-//        {
-//            for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
-//            {gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;}
-//            gatherer.graph[document.getElementById("graph").value].sensor[hitsensor].selected = true;
-//            document.getElementById("graphitems").value = hitsensor;
-//            console.log("set it true");
-//        }else{
-//            gatherer.graph[document.getElementById("graph").value].sensor[hitsensor].selected = false;
-//            console.log("set it false");
-//        }
-//
-//    }
-
-
-
-      //  console.log(g.data[dataelement][hitsensor]);
-    }
-
-}
     this.drawclicktime = function(mousex){
         if (g.line1Element> g.data.length){ g.line1Element = g.data.length-1}
         var    canvas = document.getElementById("g1_maingraph");
@@ -509,13 +485,8 @@ this.mousedown=  function (e){
 
  // code from
         if ( g.data[g.line1Element].Time < clicktime){
-
             for (var i = g.line1Element; i<g.data.length;++i){
-
-                if (g.data[i].Time>=clicktime){
-
-                    break;
-                }
+                if (g.data[i].Time>=clicktime){   break;  }
             }
             g.line1Element = i;
         }else
@@ -532,28 +503,66 @@ this.mousedown=  function (e){
         if (g.line1Element > 0){g.line1Element -= 1; }
 
   //      console.log("timediff",(new Date(g.data[g.lineElement].Time)),new Date(clicktime));
+
+        // start the drawing of the line here -
+
+        var startx = (clicktime - document.getElementById("g1_start").value) * ppms;
+        ctx.font = "10pt Arial";
+        ctx.fillStyle = "#000000";
+        ctx.fillText(new Date(clicktime).toLocaleTimeString(), startx, 25);
+        ctx.font = "Bold 12pt Arial";
+        ctx.fillStyle = "#000000";
+sortarray = [];
+for (sensor in gatherer.graph[document.getElementById("graph").value].sensor) {
+     x=gatherer.graph[document.getElementById("graph").value].sensor[sensor]
+
+    if (x.visible && (x.selected || g.selected=='')){
+        dataelement = g.line1Element;
+        while (dataelement > 0 && g.data[dataelement][sensor] == undefined) {
+            dataelement--;
+        }
+       //sensoor,value,x,y of point,color
+        sortarray.push([sensor, (g.data[dataelement][sensor] * x.multiplier),((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor] * x.multiplier), x.min, x.max, canvas.height), x.color])
+
+
+        }
+     }
+        // if (x != undefined && x.selected) {
+        //  ctx.moveTo(((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor] * x.multiplier), x.min, x.max, canvas.height));
+        //   ctx.lineTo(startx -50 , (20*i));
+        //}
+
         ctx.globalAlpha = 1;
         ctx.beginPath();
-
-            dataelement = g.line1Element;
-             while(dataelement > 0 && g.data[dataelement][g.selected] == undefined ) {
-                dataelement--; }
-    //            console.log("elements",dataelement, g.lineElement);
-        var x = gatherer.graph[document.getElementById("graph").value].sensor[g.selected]; // selected sensor value
-        var startx = (clicktime - document.getElementById("g1_start").value)*ppms;
-        ctx.moveTo(startx,0);
-      //  console.log("start cord",clicktime*ppms,0);
-        ctx.lineTo(startx,canvas.height);
-        ctx.fillText(new Date(clicktime).toLocaleTimeString(),startx,20);
-
-
-
-        if (x != undefined){
-            ctx.moveTo(((g.data[dataelement].Time)-document.getElementById('g1_start').value)*ppms,gety((g.data[dataelement][g.selected]* x.multiplier), x.min, x.max,canvas.height));
-            ctx.lineTo(startx-40,40);
-            ctx.fillText(g.data[dataelement][g.selected],startx-40,40);
-        }
+        ctx.strokeStyle = "#000000";
+        ctx.moveTo(startx, 0);
+        ctx.lineTo(startx, canvas.height);
         ctx.stroke();
+      sortarray.sort(function(a, b) {return a[3] - b[3]});
+
+        for (i=0;i<sortarray.length;++i){
+            // limit text so it wont go off screen
+            if ( sortarray[i][3] < 12){ sortarray[i][3] = 12;}
+            if ( sortarray[i][3] > canvas.height){ sortarray[i][3] = canvas.height;}
+            var diff = 999;
+            if (i> 0){
+                 diff = (sortarray[i][3]-sortarray[i-1][3])
+            }
+
+            if ( diff < 12 ){
+               // not displaying overlapping values
+               // ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx +50, sortarray[i][3]+(14-diff));
+            }else
+            {
+                ctx.fillStyle =sortarray[i][4];
+                ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx +5, sortarray[i][3]);
+                ctx.fillStyle ="#000000";
+
+                ctx.fillText(sortarray[i][1].toFixed(2), startx -50, sortarray[i][3]);
+            }
+
+           // ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx +5, sortarray[i][3]);
+        }
 
     }
     this.checkTime = function(){
@@ -574,4 +583,52 @@ this.mousedown=  function (e){
         }
 
     }
+
+
+this.graphButtonClick = function(x,y)
+{
+    if (y > g.height - 40) {
+        if (x < 40) {
+            console.log("left");
+            g.shift(g.start.value- g.end.value);
+            return false
+        }
+        if (x > g.width - 40) {
+            console.log("right");
+            g.shift(g.end.value- g.start.value);
+                return false
+        }
+    }
+return true
+}
+this.shift = function(x){
+
+    g.shifttime = x/50;
+    g.shiftcount = 0;
+    g.goshift();
+
+
+}
+this.goshift = function(){
+    var start = new Date().getTime();
+
+    g.end.value = (g.end.value*1) +g.shifttime;
+    g.start.value = (g.start.value*1)+ g.shifttime;
+
+    this.draw(this.maingraph,this.start.value,this.end.value);
+    this.draw(this.overviewindicatorCanvas,this.start.value,this.end.value,true);
+    g.shiftcount++;
+     // take into account the time in takes to draw the graph and subtract it from the effect time
+    var nexttime = ((g.shiftcount*g.shiftcount*g.shiftcount)/4000) - ( new Date().getTime()-start);
+    if (g.shiftcount < 50){
+        setTimeout("g.goshift()",nexttime )
+
+    }else
+    {
+        g.drawMain();}
+
+
+}
+
+
 }

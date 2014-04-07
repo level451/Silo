@@ -10,10 +10,10 @@
 
 
 <html>
-
+graph <%=graph%>
 <div id="graphheader">
 
-<button onclick="query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14',new Date());">query 14 days 1 hour</button>
+<button onclick="query('avg60',new Date(new Date()-((24*21)*60*60000)),new Date(),'init14',new Date());">query 14 days 1 hour</button>
 <select id="graph" onchange="refreshNewGraph()"></select>
 
     <button onclick="savesettings()">Save</button>
@@ -35,10 +35,7 @@
     <select id="graphitems" size="5" width = "100" onchange="graphItemsOnChange()"></select>
     <button onclick="removeItemFromGraph()">Remove</button>
     <input type="color" id="color" onchange="gc_change()">
-    <input class = "minmax" type="number"   step="1" id="min"  onchange="gc_change()" > Min
-    <input class = "minmax"type="number"  step="1" id="max"   onchange="gc_change()" > Max
 
-    <button onclick="autominmax(document.getElementById('graphitems').value)">Autoscale</button>
 
     <div>
     <input class = "minmax" type="number"   step="1" id="gmin"  onchange="gc_change()" > Graph Min
@@ -55,20 +52,26 @@
     <canvas id="g1_overviewindicator" width="1200" height="100" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 0;" tabindex="1"></canvas><br>
 
 <div>
-<input type="range" min="0" max="255" step="1" id="g1_start" onchange="g.drawMain()"> start
-<input type="range" min="0" max="255" step="1" id="g1_end"  onchange="g.drawMain()" > end
-<button onclick="rescale(0,1)">Last Hour</button>
+<input type="range" min="0" max="255" step="1" id="g1_start" onchange="g.drawMain()">
+<input type="range" min="0" max="255" step="1" id="g1_end"  onchange="g.drawMain()" >
+<button onclick="rescale(0,.08333)">Last 5</button>
 <button onclick="rescale(0,.25)">Last 15</button>
-
+    <button onclick="rescale(0,1)">Last Hour</button>
     <button onclick="rescale(0,6)">Last 6</button>
+    <button onclick="rescale(0,12)">Last 12</button>
+    <button onclick="rescale(0,24)">Last 24</button>
+    <button onclick="rescale(24,48)">prev 24</button>
+    <input class = "minmax" type="number"   step="1" id="min"  onchange="gc_change()" > Min
+    <input class = "minmax"type="number"  step="1" id="max"   onchange="gc_change()" > Max
 
+    <button onclick="autominmax(document.getElementById('graphitems').value)">Autoscale</button>
     <br>
 <div id  = "buttons"></div>
 </div>
 </div>
 <div id="graphdiv">
-    <canvas id="g1_maingraph" width="1200" height="400" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 1;" tabindex="1"></canvas>
-    <canvas id="g1_maingraphscale" width="1200" height="400" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 0;" tabindex="1"></canvas>
+    <canvas id="g1_maingraph" width="1200" height="400" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 0;" tabindex="1"></canvas>
+    <canvas id="g1_maingraphscale" width="1200" height="400" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 1;" tabindex="1"></canvas>
 
 </div>
 </body>
@@ -81,12 +84,12 @@
         g = new graph("g1");
 
         mouse={};
-        g.maingraph.addEventListener("mousedown", g.mousedown,false);
-        g.maingraph.addEventListener("mouseup", g.mouseup,false);
-        g.maingraph.addEventListener("mouseout", g.mouseup,false);
-        g.maingraph.addEventListener("mousewheel", g.mousewheel,false);
-        g.maingraph.addEventListener("touchstart", g.touchstart,false);
-        g.maingraph.addEventListener("touchstop", g.touchstop,false);
+        g.maingraphscale.addEventListener("mousedown", g.mousedown,false);
+        g.maingraphscale.addEventListener("mouseup", g.mouseup,false);
+        g.maingraphscale.addEventListener("mouseout", g.mouseup,false);
+        g.maingraphscale.addEventListener("mousewheel", g.mousewheel,false);
+        g.maingraphscale.addEventListener("touchstart", g.touchstart,false);
+        g.maingraphscale.addEventListener("touchend", g.touchend,false);
         window.addEventListener("resize",resize,false);
 
         if (gatherer.graph == undefined){
@@ -97,7 +100,18 @@
 
 
     }
-        refreshavailablesensors();
+        refreshavailablesensors(setGraphFromName("<%=graph%>"));
+
+    if (setGraphFromName("<%=graph%>") > -1)
+    {
+    }else
+    {
+
+       addNewGraph("<%=graph%>");
+
+
+    }
+
         //resize();
     }
     function msghandler(indata){
@@ -105,10 +119,8 @@
         //console.log(s);
         if (s.dataType == "Serial")
         {
-           // console.log("Serial Data", s);
             s.Time = new Date().getTime();
             delete s.dataType;
-          //  console.log(s);
             g.data.push(s);
 
 
@@ -161,7 +173,7 @@
 
 
     }
-function refreshavailablesensors(){
+function refreshavailablesensors(graphid){
    // var type = document.getElementById("availablesensors");
 var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgatherer").value].sensor)   ;
     var temp='';
@@ -175,7 +187,12 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
     document.getElementById("availablesensors").innerHTML=temp;
 
     temp='';
-    var savevalue = document.getElementById("graph").value;
+    if (graphid >-1){
+        var savevalue = graphid
+    }else{
+        var savevalue = document.getElementById("graph").value;
+    }
+
 
     for (var prop in gatherer.graph){
            temp=temp+'<option value="'+prop+'">'+gatherer.graph[prop].name+'('+prop+')</option>';
@@ -186,7 +203,7 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
     for (var prop in gatherer.graph[document.getElementById("graph").value].sensor)
 
     {
-        temp=temp+'<option value="'+prop+'">'+sensorNametoUserName(prop)+'('+prop+')'+'</option>';
+        temp=temp+'<option value="'+prop+'">'+sensorNametoUserName(prop)+'</option>';
 
     }
 
@@ -196,7 +213,7 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
     for (var prop in gatherer.graph[document.getElementById("graph").value].sensor)
     {
 
-        temp=temp+'<button type="button" id="b_'+prop+'" data-sensor="'+prop+'" onclick="showHide(this);">'+sensorNametoUserName(prop)+'('+prop+')</button>';
+        temp=temp+'<button type="button" id="b_'+prop+'" data-sensor="'+prop+'" onclick="showHide(this);">'+sensorNametoUserName(prop)+'</button>';
 
     }
     temp=temp+'<button type="button" data-sensor="" onclick="selectNone();">Select None</button>';
@@ -303,6 +320,7 @@ function graphItemsOnChange(){
 
     function resize(){
         var newwidth = g.maingraph.parentElement.clientWidth;
+        g.width = newwidth;
         g.overviewCanvas.width = newwidth;
         g.overviewindicatorCanvas.width = newwidth;
         g.maingraph.width = newwidth;
@@ -339,10 +357,12 @@ var data = e.dataset;
 
     graphItemsOnChange();
     g.drawMain();
+    g.drawOverview();
     refreshbuttons();
 
 }
 function selectNone(){
+    g.selected = "";
     document.getElementById("graphitems").value = "";
     for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
     {gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;
@@ -363,10 +383,11 @@ function selectNone(){
 
 }
 function refreshbuttons(){
-
+    g.selected ="";
     for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
     {
         if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected == true){
+            g.selected = sensor;
             document.getElementById("b_"+sensor).style.color = gatherer.graph[document.getElementById("graph").value].sensor[sensor].color;
             document.getElementById("b_"+sensor).style.background="#606060";
 
@@ -389,13 +410,15 @@ function refreshbuttons(){
         g.end.value = new Date().getTime()-(e*60000*60);
         g.drawMain();
     }
-function addNewGraph()
+function addNewGraph(name)
 {
     gatherer.graph.push({});
 
     refreshavailablesensors();
-    document.getElementById("graph").value = gatherer.graph.length-1
+    document.getElementById("graph").value = gatherer.graph.length-1;
     gatherer.graph[document.getElementById("graph").value].sensor = {};
+    gatherer.graph[document.getElementById("graph").value].name = name;
+    gatherer.graph[document.getElementById("graph").value].selected = "";
     refreshavailablesensors();
 }
 function refreshNewGraph()
@@ -409,6 +432,26 @@ delete gatherer.graph[document.getElementById("graph").value].sensor[document.ge
     //document.getElementById("graphitems").remove(document.getElementById("graphitems").selectedIndex);
     refreshNewGraph();
     refreshbuttons();
+
+}
+function setGraphFromName(name){
+    if ( name == 'undefined')
+
+    {
+
+        return 0;}
+    for (graph in gatherer.graph){
+
+         if (gatherer.graph[graph].name ==  name){
+
+            return graph
+             break;
+
+
+         }
+
+     }
+    return -1;
 
 }
 </script>

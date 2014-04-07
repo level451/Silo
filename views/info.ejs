@@ -12,27 +12,7 @@
     <meta name = "viewport" content = "width=device-width, initial-scale = 1.0">
 </head>
 <body>
-<button onclick="query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14',new Date());">query 14 days 1 hour</button>
-<button onclick="query('avg1',new Date(new Date()-(24*60*60000)),new Date(),'inittest');">query 1 days 1 min</button>
-<button onclick="query('avg1',new Date(((document.getElementById('stime').min*1)-24*60*60000)),new Date(document.getElementById('stime').min*1));">previous Day 1 min</button><button onclick="query('avg1440',new Date(new Date()-((24*30)*60*60000)),new Date());">query 30 days 1 day</button>
-<button onclick="query('test',new Date(),1);">test</button>
 
-<button onclick="cut()">cut</button>
-<button onclick="query('log',new Date(document.getElementById('stime').value*1),new Date(document.getElementById('etime').value*1));">splice</button>
-new Date(document.getElementById("stime").value*1)
-<div>
-
-    <canvas id="overview" width="1200" height="100" style="border:1px solid #000000;" tabindex="1"></canvas>
-    <canvas id="overviewindicator" width="1200" height="100" style="border:1px solid #000000;" tabindex="1"></canvas>
-</div>
-    <br>
-    <input type="range" min="0" max="255" step="30000" id="stime" onchange="zoomgraph()" > start
-    <input type="range" min="0" max="255" step="30000" id="etime"  onchange="zoomgraph()" > end <br>
- <div>
-    <canvas id="x1" width="1200" height="400" style="border:1px solid #000000;" tabindex="1"></canvas>
-
-
-</div>
 
 
 <div class="sensorinfo">

@@ -12,7 +12,6 @@ lastdata = {}
 
 exports.setup = function(){
 
-        serial.openSerialPort('com6'); //windows
    //     seriallib.openSerialPort("/dev/ttyACM0"); //not windows
         websock.listen();
 // mongo
@@ -57,6 +56,11 @@ exports.setup = function(){
             cSettings.findOne({"type":"gatherer"},function(err,result){
                 if (result){
                     gathererSettings=result;
+
+
+                    // open the seial port after mongo is open
+                    serial.openSerialPort('com6'); //windows
+
                 } else
                 {
                     gathererSettings.type = "gatherer";

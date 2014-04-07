@@ -323,5 +323,12 @@ function combineData(dold,dnew){
 
 }
 function sensorNametoUserName(sn){
+   // return gatherer.id[ sn.substr(sn.indexOf("_")+1,1)].sensor[sn.substring(0,sn.indexOf("_"))].name
+
+    if (gatherer.id[ sn.substr(sn.indexOf("_")+1,1)].sensor[sn.substring(0,sn.indexOf("_"))].name == ""){
+     return "("+sn+")";
+    }else
+    {
     return gatherer.id[ sn.substr(sn.indexOf("_")+1,1)].sensor[sn.substring(0,sn.indexOf("_"))].name
-}
+    }
+    }

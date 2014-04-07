@@ -32,6 +32,7 @@ if ('development' == app.get('env')) {
 app.get('/', routes.graph);
 app.get('/led', routes.led);
 app.get('/info', routes.info);
+app.get('/graph/:graph', routes.graph);
 app.get('/graph', routes.graph);
 
 //app.get('/users', user.list);

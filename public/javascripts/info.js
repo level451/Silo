@@ -418,7 +418,7 @@ function validatename(x){
         alert("Name Cannot Be Empty");
         return;
     }
-    x.value = x.value.trim().substr(0,10);
+    x.value = x.value.trim().substr(0,20);
     if (typeof(gatherer.id[document.getElementById("ID").value]) != "object"){
         gatherer.id[document.getElementById("ID").value]={};
     }
