@@ -10,13 +10,18 @@
 
 
 <html>
-graph <%=graph%>
+<div>
+    <h1  onblur='nameChange()' onkeydown='if (event.keyCode == 13){nameChange();return false;}' contenteditable="true" id="title" align="center"></h1>
+
+
+</div>
 <div id="graphheader">
 
-<button onclick="query('avg60',new Date(new Date()-((24*21)*60*60000)),new Date(),'init14',new Date());">query 14 days 1 hour</button>
+<button onclick="query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14');">query 14 days 1 hour</button>
 <select id="graph" onchange="refreshNewGraph()"></select>
 
     <button onclick="savesettings()">Save</button>
+    <button onclick="query('avg1440',new Date(g.start.value*1),new Date(g.end.value*1));">splice day</button>
     <button onclick="query('avg60',new Date(g.start.value*1),new Date(g.end.value*1));">splice hour</button>
     <button onclick="query('avg1',new Date(g.start.value*1),new Date(g.end.value*1));">splice min</button>
     <button onclick="query('log',new Date(g.start.value*1),new Date(g.end.value*1));">splice</button>
@@ -36,8 +41,16 @@ graph <%=graph%>
     <button onclick="removeItemFromGraph()">Remove</button>
     <input type="color" id="color" onchange="gc_change()">
 
+    <input class="minmax" type="number" id="daysData" onchange="gc_change()"> Days of Data
+    <select ID="daysDataResolution" onchange="gc_change()">
+        <option value ="auto1440">Day Avg</option>
+        <option value ="auto60">Hour Avg</option>
+        <option value ="auto1">Min Avg</option>
+        <option value ="log">Actual</option>
+    </select>
 
     <div>
+
     <input class = "minmax" type="number"   step="1" id="gmin"  onchange="gc_change()" > Graph Min
     <input class = "minmax" type="number"  step="1" id="gmax"   onchange="gc_change()" > Graph Max
     <input class = "minmax" type ="number" default ="1" id="multiplier"onchange="gc_change()"> Multiplier
@@ -111,7 +124,7 @@ graph <%=graph%>
 
 
     }
-
+    document.getElementById("title").innerHTML=gatherer.graph[document.getElementById("graph").value].name;
         //resize();
     }
     function msghandler(indata){
@@ -123,13 +136,9 @@ graph <%=graph%>
             delete s.dataType;
             g.data.push(s);
 
-
-//            g.end.max = s.Time+120000
-//            g.end.value = s.Time+120000;
-//            g.endelement = g.data.length-1;
-//           // g.drawOverview();
-//            g.drawMain();
         }
+
+
         if (s.packettype == "query") // got query data from silo
         {
             // convert all the stupid text dates to numbers
@@ -138,13 +147,16 @@ graph <%=graph%>
             }
             g.addData(s.data,new Date(s.startTime).getTime(), new Date(s.endTime).getTime());
 
+
             g.drawOverview();
-            if (s.options == "init14"){
+            if (s.options == "init"){
+                refreshbuttons();
+                graphItemsOnChange();
                 g.end.value = g.end.max;
                 g.start.value = g.end.value-(24*60*60000);
                 g.drawMain();
-                query('avg1',new Date(g.start.value*1),new Date(g.end.max*1));
-               // query('avg1',new Date(g.start.min*1),new Date(g.end.value*1));
+                g.realtimeTimer = setInterval("g.checkTime()",100);
+
                 return;
 
             }
@@ -154,19 +166,19 @@ graph <%=graph%>
             if(s.type=="avg60"){
 
                 g.drawMain();
-
+                return;
 
             }
             if(s.type=="avg1"){
                 g.drawMain();
                 g.realtimeTimer = setInterval("g.checkTime()",100);
-                refreshbuttons();
-                graphItemsOnChange();
 
+                return;
 
             }
              if(s.type=="log"){
                 g.drawMain();
+                return''
             }
         }
 
@@ -217,8 +229,10 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
 
     }
     temp=temp+'<button type="button" data-sensor="" onclick="selectNone();">Select None</button>';
+    temp=temp+'<button id="details" type="button" data-sensor="" onclick="details();">Details</button>';
 
     document.getElementById("buttons").innerHTML=temp;
+
 }
     function addsensortograph(){
         if (gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("availablesensors").value+'_'+document.getElementById("selectedgatherer").value] == undefined)
@@ -256,14 +270,28 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
         var padding = (max- min)*.1;
         gatherer.graph[id].sensor[sensor].max = (max + padding)*gatherer.graph[id].sensor[sensor].multiplier;
         gatherer.graph[id].sensor[sensor].min = (min - padding)*gatherer.graph[id].sensor[sensor].multiplier;
-        console.log("min", gatherer.graph[id].sensor[sensor].min,min);
-        console.log("max", gatherer.graph[id].sensor[sensor].max.max);
+//        console.log("min", gatherer.graph[id].sensor[sensor].min,min);
+//        console.log("max", gatherer.graph[id].sensor[sensor].max.max);
        graphItemsOnChange();
         gc_change();
         g.drawMain();
         g.drawscale(g.maingraphscale);
     }
 function gc_change(){
+
+    gatherer.graph[document.getElementById("graph").value].gmax = document.getElementById("gmax").value;
+    gatherer.graph[document.getElementById("graph").value].gmin = document.getElementById("gmin").value;
+    if (gatherer.graph[document.getElementById("graph").value].daysData != document.getElementById("daysData").value && document.getElementById("daysData").value > 0){
+        gatherer.graph[document.getElementById("graph").value].daysData = document.getElementById("daysData").value;
+        var thisgraph = gatherer.graph[document.getElementById("graph").value];
+        g.data=[];
+
+        g.dataStart = 0;
+        g.dataEnd=0;
+        query('avg60',new Date(new Date()-((24*thisgraph.daysData)*60*60000)),new Date(),'init14',new Date());
+
+    }
+
 
     var x = gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value];
     if (x == undefined){return;}
@@ -273,8 +301,6 @@ function gc_change(){
     x.max=document.getElementById("max").value;
     x.multiplier = document.getElementById("multiplier").value;
     x.usegraphrange=document.getElementById("usegraphrange").checked;
-    gatherer.graph[document.getElementById("graph").value].gmax = document.getElementById("gmax").value;
-    gatherer.graph[document.getElementById("graph").value].gmin = document.getElementById("gmin").value;
 
     g.drawMain();
     g.drawOverview();
@@ -284,6 +310,9 @@ function gc_change(){
 }
 
 function graphItemsOnChange(){
+    var thisgraph = gatherer.graph[document.getElementById("graph").value];
+    if (thisgraph.daysData != undefined)
+    {document.getElementById("daysData").value = thisgraph.daysData;}
 
     if (document.getElementById("graphitems").value == ""){
 
@@ -294,12 +323,15 @@ function graphItemsOnChange(){
     return;
 }
     var x = gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value];
+
 //document.getElementById("graphitems").value;
     for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
     {gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;}
     gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value].selected = true;
     g.selected = document.getElementById("graphitems").value;
     g.drawMain();
+
+
 
 
     if (x == undefined){return;}
@@ -384,23 +416,43 @@ function selectNone(){
 }
 function refreshbuttons(){
     g.selected ="";
+    if (gatherer.graph[document.getElementById("graph").value].details == undefined || gatherer.graph[document.getElementById("graph").value].details == 0 )
+    {
+        document.getElementById("details").innerHTML = "No Details"
+    }else   if (gatherer.graph[document.getElementById("graph").value].details == 1){
+        document.getElementById("details").innerHTML = "Low Details"
+
+    }else   if (gatherer.graph[document.getElementById("graph").value].details == 2){
+        document.getElementById("details").innerHTML = "Mid Details"
+
+    }else   if (gatherer.graph[document.getElementById("graph").value].details == 3){
+        document.getElementById("details").innerHTML = "High Details"
+
+    }
+
+
+
     for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
     {
+
+        document.getElementById("b_"+sensor).style.color="#FFFFFF";
+        //selected
         if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected == true){
             g.selected = sensor;
-            document.getElementById("b_"+sensor).style.color = gatherer.graph[document.getElementById("graph").value].sensor[sensor].color;
-            document.getElementById("b_"+sensor).style.background="#606060";
-
+            document.getElementById("b_"+sensor).style.font="bold 12px arial";
+            document.getElementById("b_"+sensor).style.background=gatherer.graph[document.getElementById("graph").value].sensor[sensor].color;
         }else
         {
-            document.getElementById("b_"+sensor).style.color="";
-            if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].visible == true){
-                document.getElementById("b_"+sensor).style.background="";
 
+            if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].visible == true){
+                document.getElementById("b_"+sensor).style.font="12px arial";
+                document.getElementById("b_"+sensor).style.background=gatherer.graph[document.getElementById("graph").value].sensor[sensor].color;
             } else
             {
+                //hidden
                 gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;
-                document.getElementById("b_"+sensor).style.background="#FFFFFF";
+                document.getElementById("b_"+sensor).style.font="italic 8px arial";
+                document.getElementById("b_"+sensor).style.background="#c0c0c0";
             }
         }
 }
@@ -424,14 +476,17 @@ function addNewGraph(name)
 function refreshNewGraph()
 {
     refreshavailablesensors();
+    document.getElementById("title").innerHTML=gatherer.graph[document.getElementById("graph").value].name;
+
     g.drawMain();
     g.drawOverview();
+    refreshbuttons();
 }
 function removeItemFromGraph(){
 delete gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value]
     //document.getElementById("graphitems").remove(document.getElementById("graphitems").selectedIndex);
     refreshNewGraph();
-    refreshbuttons();
+    //refreshbuttons();
 
 }
 function setGraphFromName(name){
@@ -454,4 +509,23 @@ function setGraphFromName(name){
     return -1;
 
 }
+function nameChange()
+{
+    console.log('aasdf')
+    gatherer.graph[document.getElementById("graph").value].name= event.srcElement.innerHTML;
+    refreshavailablesensors();
+}
+function details(){
+    if (gatherer.graph[document.getElementById("graph").value].details == undefined)
+    {
+        gatherer.graph[document.getElementById("graph").value].details = 0;
+    }
+    gatherer.graph[document.getElementById("graph").value].details +=1;
+    if (gatherer.graph[document.getElementById("graph").value].details > 3){
+        gatherer.graph[document.getElementById("graph").value].details = 0;
+    }
+
+    refreshbuttons();
+    g.drawMain();
+            }
 </script>

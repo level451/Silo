@@ -128,7 +128,8 @@ function graph(graphname){
         //console.log(st,et);
         for (var i = 1; i<this.data.length;i+=1){
             if (st<=this.data[i].Time){
-                var se = i;
+               // added -1 to fix overlaping data - may need to check if we miss data because of this - probably ok
+                var se = i-1;
                 break;
 
             }
@@ -259,33 +260,35 @@ function graph(graphname){
         }
 /// draw the time lines
 var graphhours = (e-s)/3600000;
-var timestep = 60000*60*24 // days
+var timestep = 60000*60*96 ;// days
         if (graphhours < .5){
-            timestep = 60000 *5 // 5 min
+            timestep = 60000 *5; // 5 min
         } else   if (graphhours < 1){
-            timestep = 60000 *15 // 15 min
-} else if (graphhours < 6)
+            timestep = 60000 *15; // 15 min
+        } else if (graphhours < 6)
         {
-            timestep = 60000 *60 // 1 hours
+            timestep = 60000 *60; // 1 hours
         } else if (graphhours < 12)
         {
-            timestep = 60000 *60 *3 // 3 hours
+            timestep = 60000 *60 *3; // 3 hours
         } else if (graphhours < 24){
-            timestep = 60000 *60*6 // 6 hours
+            timestep = 60000 *60*6; // 6 hours
+        } else if (graphhours < 36){
+            timestep = 60000 *60*12; // 12 hours
+        }else if (graphhours < 336){
+            timestep = 60000 *60*24; // 24 hours
+        }else if (graphhours < 720){
+            timestep = 60000 *60*48; // 24 hours
         }
-
-
-
-
-
-
-
+       // console.log("timestep",timestep/(60000*60),graphhours)
         var roundedstart = Math.floor(s/(timestep))*timestep;
         var time = 0;
         ctx.beginPath();
         ctx.lineWidth = 1;
         ctx.strokeStyle="#c0c0c0";
+        ctx.fillStyle="#000000"
         ctx.font ="10pt Arial";
+        //draw up to 60 lines
         for (var i=0; i<60;i++){
 
             time = (timestep*(i+1))-(s-roundedstart);
@@ -298,12 +301,14 @@ var timestep = 60000*60*24 // days
             }else{
             a= a.toLocaleDateString();
             }
-                ctx.fillText(a,time*ppms,10);
+                ctx.fillText(a,time*ppms,15);
+            if (time*ppms> g.width){
+                break;
+            }
         }
-        ctx.stroke();
+
+          ctx.stroke();
 /// actual graphing start
-//console.log("start and end time",new Date(s*1).toLocaleString(),new Date(e*1).toLocaleString())
-    //   console.log("elements", this.data.length-1,this.endelement);
         for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
         {
         var x = gatherer.graph[document.getElementById("graph").value].sensor[sensor];
@@ -326,36 +331,74 @@ var timestep = 60000*60*24 // days
             }
 
             // find the first occerance of the sensor at or before the starttime
-            var i = this.startelement;
-            if (i>0){i=i-1;}
-            while(i > 0 && this.data[i][sensor] == undefined ) { i=i-1; }
+            var firstpoint = this.startelement;
+            if (firstpoint >0){firstpoint =firstpoint -1;}
+            while(firstpoint  > 0 && this.data[firstpoint ][sensor] == undefined ) { firstpoint =firstpoint -1; }
 
 
             //start the line off the screen
-            ctx.moveTo(((this.data[i].Time)-s)*ppms,gety((this.data[i][sensor]* x.multiplier), x.min, x.max,bottomy));
+            ctx.moveTo(((this.data[firstpoint ].Time)-s)*ppms,gety((this.data[firstpoint ][sensor]* x.multiplier), x.min, x.max,bottomy));
                // find an end element with data in it
-            var endele = this.endelement
+            var endele = this.endelement;
             while (endele<this.data.length-1 && this.data[endele][sensor] == undefined ) { endele++; }
-            //if (this.endelement<this.data.length-1){var endele = this.endelement +1} else {var endele = this.endelement}
+
             for (var i = this.startelement; i<endele+1;++i){
             if (this.data[i][sensor]){
                 ctx.lineTo(((this.data[i].Time)-s)*ppms,gety((this.data[i][sensor]* x.multiplier), x.min, x.max,bottomy));
-                if (x.selected && !isoverview){ctx.arc(((this.data[i].Time)-s)*ppms,gety((this.data[i][sensor]* x.multiplier), x.min, x.max,bottomy),2,0,2*Math.PI);}
+
+                if (x.selected && !isoverview){
+                ctx.arc(((this.data[i].Time)-s)*ppms,gety((this.data[i][sensor]* x.multiplier), x.min, x.max,bottomy),2,0,2*Math.PI);
+
+                }
 
             }
         }
 
-          //if (ctx.isPointInPath(mouse.x,mouse.y)){console.log("pip",sensor)}
             ctx.stroke();
-        }
-        if (!isoverview && g.selected != ''){
-        // clear the area where we need to draw the scale
-       ctx.globalAlpha= .75;
-        ctx.fillStyle="#ffffff";
-        ctx.fillRect (0 , 0 , 100 , canvas.height );
-        ctx.globalAlpha= 1;
+        // plot max and min
+            // only on high detail
+            if (x.selected && !isoverview && gatherer.graph[document.getElementById("graph").value].details > 2) {
+                ctx.beginPath();
+                ctx.moveTo(((this.data[firstpoint ].Time) - s) * ppms, gety((this.data[firstpoint ][sensor] * x.multiplier), x.min, x.max, bottomy));
+                for (var i = this.startelement; i < endele + 1; ++i) {
+                    if (this.data[i][sensor + 'max']) {
+                        ctx.lineTo(((this.data[i].Time) - s) * ppms, gety((this.data[i][sensor + 'max'] * x.multiplier), x.min, x.max, bottomy));
+                    }
+                }
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(((this.data[firstpoint ].Time) - s) * ppms, gety((this.data[firstpoint ][sensor] * x.multiplier), x.min, x.max, bottomy));
+                for (var i = this.startelement; i < endele + 1; ++i) {
+                    if (this.data[i][sensor + 'min']) {
+                        ctx.lineTo(((this.data[i].Time) - s) * ppms, gety((this.data[i][sensor + 'min'] * x.multiplier), x.min, x.max, bottomy));
+                    }
+                }
+                ctx.stroke();
+            }
+            // end min and max
+
         }
 
+
+
+        if (!isoverview && g.selected != ''){
+        // lighten the area where we need to draw the scale
+       ctx.globalAlpha= .75;
+        ctx.fillStyle="#ffffff";
+        ctx.fillRect (0 , 30 , 100 , canvas.height );
+        ctx.globalAlpha= 1;
+        }
+        ctx.stroke();
+        // draw the start and stat times
+        ctx.fillStyle="#000000";
+        ctx.save();
+        ctx.rotate(Math.PI/2);
+        ctx.fillText(new Date(g.start.value*1).toLocaleTimeString() , 50, -2);
+        ctx.fillText(new Date(g.start.value*1).toLocaleDateString() , 200, -2);
+
+        ctx.fillText(new Date(g.end.value*1).toLocaleTimeString(), 50,-g.width+12 );
+        ctx.fillText(new Date(g.end.value*1).toLocaleDateString(), 200,-g.width+12 );
+        ctx.restore();
     }
 this.drawscale = function(canvas){
   var alpha = .5
@@ -364,206 +407,273 @@ this.drawscale = function(canvas){
 
     ctx.globalAlpha=alpha;
     ctx.clearRect (0 , 0 , canvas.width , canvas.height );
-ctx.fillRect(0,canvas.height-40,40,40);
-    ctx.fillRect(canvas.width-40,canvas.height-40,40,40);
-    var selected = g.selected;
-    if (selected == undefined){return;}
-
-    if (selected == ""){return;}
-    var x = gatherer.graph[document.getElementById("graph").value].sensor[selected];
-    //console.log("scale selected = min max ",selected, x.min, x.max);
-        if (x.color == undefined){
-            ctx.strokeStyle="#c0a070";
-        }else{
-            ctx.strokeStyle= x.color;
+    if ( gatherer.graph[document.getElementById("graph").value].details > 0) {
+        ctx.fillRect(0, canvas.height - 40, 40, 40);
+        ctx.fillRect(canvas.width - 40, canvas.height - 40, 40, 40);
+        var selected = g.selected;
+        if (selected == undefined) {
+            return;
         }
 
-    ctx.lineWidth= 1;
-var max = -100000;
-var min = 100000;
-var avg = 0;
+        if (selected == "") {
+            return;
+        }
+        var x = gatherer.graph[document.getElementById("graph").value].sensor[selected];
+        //console.log("scale selected = min max ",selected, x.min, x.max);
+        if (x == undefined || x.color == undefined) {
+            ctx.strokeStyle = "#c0a070";
+        } else {
+            ctx.strokeStyle = x.color;
+        }
 
-var count = 0;
-for (i = g.startelement; i < g.endelement; ++i){
-    if (g.data[i][selected] > max) {max =g.data[i][selected]; }
-    if (g.data[i][selected] < min) {min =g.data[i][selected]; }
-    if (g.data[i][selected]){avg += g.data[i][selected];++count;}
-    }
-    ctx.font ="10pt Arial";
-    ctx.fillStyle = x.color;
-    ctx.beginPath();
-    var gv = (x.min*1)+((x.max- x.min) *.02); // 2% Higher than min
-    var xc = gety(gv, x.min, x.max, canvas.height);
-    ctx.moveTo(0,xc);
-    ctx.globalAlpha = 1;
-    ctx.fillText(gv.toFixed(1),2,xc+5);
-    ctx.globalAlpha=alpha1;
-    ctx.lineTo(canvas.width,xc);
-    gv = (x.min*1)+((x.max- x.min) *.98); // 98%  Higher than min
-    xc = gety(gv, x.min, x.max, canvas.height);
-    ctx.moveTo(0,xc);
-    ctx.globalAlpha = 1;
-    ctx.fillText(gv.toFixed(1),2,xc+5);
-    ctx.globalAlpha=alpha1;
-    ctx.lineTo(canvas.width,xc);
-    gv = (x.min*1)+((x.max- x.min) *.50); // 50%  Higher than min
-    xc = gety(gv, x.min, x.max, canvas.height);
-    ctx.moveTo(0,xc);
-    ctx.globalAlpha = 1;
-    ctx.fillText(gv.toFixed(1),2,xc+5);
-    ctx.globalAlpha=alpha1;
-    ctx.lineTo(canvas.width,xc);
-    gv = (x.min*1)+((x.max- x.min) *.75); // 75%  Higher than min
-    xc = gety(gv, x.min, x.max, canvas.height);
-    ctx.moveTo(0,xc);
-    ctx.globalAlpha = 1;
-    ctx.fillText(gv.toFixed(1),2,xc+5);
-    ctx.globalAlpha=alpha1;
-    ctx.lineTo(canvas.width,xc);
-    gv = (x.min*1)+((x.max- x.min) *.25); // 25%  Higher than min
-    xc = gety(gv, x.min, x.max, canvas.height);
-    ctx.moveTo(0,xc);
-    ctx.globalAlpha = 1;
-    ctx.fillText(gv.toFixed(1),2,xc+5);
-    ctx.globalAlpha=alpha1;
-    ctx.lineTo(canvas.width,xc);
+        ctx.lineWidth = 1;
+        var max = -100000;
+        var min = 100000;
+        var avg = 0;
 
+        var count = 0;
 
-
-    ctx.stroke();
-
-    avg = avg/count;
-    min = min * x.multiplier;
-    avg = avg * x.multiplier;
-    max = max * x.multiplier;
-    ctx.fillStyle = "#000000";
-
-   // console.log("Max",max,"min",min,"avg",avg);
-   ctx.font ="Bold 12pt Arial";
+        ctx.font = "10pt Arial";
+        ctx.fillStyle = x.color;
         ctx.beginPath();
-        var xc = gety(min, x.min, x.max, canvas.height);
-    ctx.moveTo(80,xc);
-    ctx.globalAlpha = 1;
-    ctx.fillText(min.toFixed(1)+' Min',20,xc+5);
-    ctx.globalAlpha=alpha;
-       ctx.lineTo(canvas.width,xc);
-        xc = gety(max, x.min, x.max, canvas.height);
-    ctx.globalAlpha = 1;
-    ctx.fillText(max.toFixed(1)+' Max',20,xc+5);
-    ctx.globalAlpha=alpha;
-    ctx.moveTo(80,xc);
-        ctx.lineTo(canvas.width,xc);
-    xc = gety(avg, x.min, x.max, canvas.height);
-    ctx.globalAlpha = 1;
-    ctx.fillText(avg.toFixed(1)+' Avg',20,xc+5);
-    ctx.globalAlpha=alpha;
-    ctx.moveTo(80,xc);
-    ctx.lineTo(canvas.width,xc);
+        var gv = (x.min * 1) + ((x.max - x.min) * .10); // 2% Higher than min
+        var xc = gety(gv, x.min, x.max, canvas.height);
+        ctx.moveTo(15, xc);
+        ctx.globalAlpha = 1;
+        ctx.fillText(gv.toFixed(1), 17, xc + 5);
+        ctx.globalAlpha = alpha1;
+        ctx.lineTo(canvas.width, xc);
+        gv = (x.min * 1) + ((x.max - x.min) * .90); // 98%  Higher than min
+        xc = gety(gv, x.min, x.max, canvas.height);
+        ctx.moveTo(15, xc);
+        ctx.globalAlpha = 1;
+        ctx.fillText(gv.toFixed(1), 17, xc + 5);
+        ctx.globalAlpha = alpha1;
+        ctx.lineTo(canvas.width, xc);
+        gv = (x.min * 1) + ((x.max - x.min) * .50); // 50%  Higher than min
+        xc = gety(gv, x.min, x.max, canvas.height);
+        ctx.moveTo(15, xc);
+        ctx.globalAlpha = 1;
+        ctx.fillText(gv.toFixed(1), 17, xc + 5);
+        ctx.globalAlpha = alpha1;
+        ctx.lineTo(canvas.width, xc);
+        gv = (x.min * 1) + ((x.max - x.min) * .70); // 75%  Higher than min
+        xc = gety(gv, x.min, x.max, canvas.height);
+        ctx.moveTo(15, xc);
+        ctx.globalAlpha = 1;
+        ctx.fillText(gv.toFixed(1), 17, xc + 5);
+        ctx.globalAlpha = alpha1;
+        ctx.lineTo(canvas.width, xc);
+        gv = (x.min * 1) + ((x.max - x.min) * .30); // 25%  Higher than min
+        xc = gety(gv, x.min, x.max, canvas.height);
+        ctx.moveTo(15, xc);
+        ctx.globalAlpha = 1;
+        ctx.fillText(gv.toFixed(1), 17, xc + 5);
+        ctx.globalAlpha = alpha1;
+        ctx.lineTo(canvas.width, xc);
+
+
+        ctx.stroke();
+    }
+    if ( gatherer.graph[document.getElementById("graph").value].details > 1) {
+        for (i = g.startelement; i < g.endelement; ++i) {
+            if (g.data[i][selected] > max) {
+                max = g.data[i][selected];
+            }
+            if (g.data[i][selected] < min) {
+                min = g.data[i][selected];
+            }
+            if (g.data[i][selected]) {
+                avg += g.data[i][selected];
+                ++count;
+            }
+        }
+        avg = avg / count;
+        min = min * x.multiplier;
+        avg = avg * x.multiplier;
+        max = max * x.multiplier;
+        ctx.fillStyle = "#000000";
+
+        // console.log("Max",max,"min",min,"avg",avg);
+        ctx.font = "Bold 12pt Arial";
+        ctx.beginPath();
+        var xcmin = gety(min, x.min, x.max, canvas.height);
+        var xcmax = gety(max, x.min, x.max, canvas.height);
+        var xcavg = gety(avg, x.min, x.max, canvas.height);
+        if (xcmin - xcavg > 20) {
+            ctx.moveTo(80, xcmin);
+            ctx.globalAlpha = 1;
+            ctx.fillText(min.toFixed(1) + ' Min', 20, xcmin + 5);
+            ctx.globalAlpha = alpha;
+            ctx.lineTo(canvas.width, xcmin);
+
+        }
+        if (xcavg - xcmax > 20) {
+            ctx.globalAlpha = 1;
+            ctx.fillText(max.toFixed(1) + ' Max', 20, xcmax + 5);
+            ctx.globalAlpha = alpha;
+            ctx.moveTo(80, xcmax);
+            ctx.lineTo(canvas.width, xcmax);
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.fillText(avg.toFixed(1) + ' Avg', 20, xcavg + 5);
+        ctx.globalAlpha = alpha;
+        ctx.moveTo(80, xcavg);
+        ctx.lineTo(canvas.width, xcavg);
+
+
         ctx.stroke();
 
 
-
+    }
 }
 
 
 
-    this.drawclicktime = function(mousex){
-        if (g.line1Element> g.data.length){ g.line1Element = g.data.length-1}
-        var    canvas = document.getElementById("g1_maingraph");
+    this.drawclicktime = function(mousex) {
+        if (gatherer.graph[document.getElementById("graph").value].details > 0) {
 
-        var ppms =(canvas.width)/(document.getElementById('g1_end').value-document.getElementById('g1_start').value); // pixels per millisecond
-
-        var clicktime = (document.getElementById('g1_start').value*1)+((1/ppms)*(mousex));
-        var ctx = canvas.getContext("2d");
-        // g.lineElement should be close to the correct element time -
-        // if its way off get there
-        if (g.data[g.line1Element].time < g.data[g.startelement].time ){
-            g.line1Element = g.startelement;
-
-        }
-
-
- // code from
-        if ( g.data[g.line1Element].Time < clicktime){
-            for (var i = g.line1Element; i<g.data.length;++i){
-                if (g.data[i].Time>=clicktime){   break;  }
+            if (g.line1Element > g.data.length) {
+                g.line1Element = g.data.length - 1
             }
-            g.line1Element = i;
-        }else
-        {
-            for (var i = g.line1Element; i>1 ;--i){
-                g.line1Element = 0;
-                if (g.data[i].Time<clicktime){
-                    g.line1Element = i+1;
-                    break;
+            var canvas = document.getElementById("g1_maingraph");
+
+            var ppms = (canvas.width) / (document.getElementById('g1_end').value - document.getElementById('g1_start').value); // pixels per millisecond
+
+            var clicktime = (document.getElementById('g1_start').value * 1) + ((1 / ppms) * (mousex));
+            var ctx = canvas.getContext("2d");
+            // g.lineElement should be close to the correct element time -
+            // if its way off get there
+            if (g.data[g.line1Element].time < g.data[g.startelement].time) {
+                g.line1Element = g.startelement;
+            }
+            // code from
+            if (g.data[g.line1Element].Time < clicktime) {
+                for (var i = g.line1Element; i < g.data.length; ++i) {
+                    if (g.data[i].Time >= clicktime) {
+                        break;
+                    }
+                }
+                g.line1Element = i;
+            } else {
+                for (var i = g.line1Element; i > 1; --i) {
+                    g.line1Element = 0;
+                    if (g.data[i].Time < clicktime) {
+                        g.line1Element = i + 1;
+                        break;
+                    }
+                }
+                g.line1Element = i;
+            }
+            if (g.line1Element > 0) {
+                g.line1Element -= 1;
+            }
+            // start the drawing of the line here -
+
+            var startx = (clicktime - document.getElementById("g1_start").value) * ppms;
+            ctx.font = "10pt Arial";
+            ctx.fillStyle = "#000000";
+            ctx.fillText(new Date(clicktime).toLocaleTimeString(), startx + 2, 30);
+            ctx.font = "Bold 12pt Arial";
+            ctx.fillStyle = "#000000";
+            sortarray = [];
+            for (sensor in gatherer.graph[document.getElementById("graph").value].sensor) {
+                x = gatherer.graph[document.getElementById("graph").value].sensor[sensor]
+
+                if (x.visible && (x.selected || g.selected == '')) {
+                    dataelement = g.line1Element;
+                    while (dataelement > 0 && g.data[dataelement][sensor] == undefined) {
+                        dataelement--;
+                    }
+                    //sensoor,value,x,y of point,color
+                    if (x.selected) {
+
+                        sortarray.push([sensor, (g.data[dataelement][sensor] * x.multiplier), ((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor] * x.multiplier), x.min, x.max, canvas.height), x.color]);
+                        sortarray.push(['Max', (g.data[dataelement][sensor + 'max'] * x.multiplier), ((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor + 'max'] * x.multiplier), x.min, x.max, canvas.height), x.color]);
+                        sortarray.push(['Min', (g.data[dataelement][sensor + 'min'] * x.multiplier), ((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor + 'min'] * x.multiplier), x.min, x.max, canvas.height), x.color]);
+
+                    } else {
+                        sortarray.push([sensor, (g.data[dataelement][sensor] * x.multiplier), ((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor] * x.multiplier), x.min, x.max, canvas.height), x.color])
+                    }
+
                 }
             }
-            g.line1Element = i;
-        }
-        if (g.line1Element > 0){g.line1Element -= 1; }
+            // if (x != undefined && x.selected) {
+            //  ctx.moveTo(((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor] * x.multiplier), x.min, x.max, canvas.height));
+            //   ctx.lineTo(startx -50 , (20*i));
+            //}
 
-  //      console.log("timediff",(new Date(g.data[g.lineElement].Time)),new Date(clicktime));
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.strokeStyle = "#000000";
+            ctx.moveTo(startx, 0);
+            ctx.lineTo(startx, canvas.height);
+            ctx.stroke();
+            sortarray.sort(function (a, b) {
+                return a[3] - b[3]
+            });
+            if (g.selected == "") {
+                for (i = 0; i < sortarray.length; ++i) {
+                    // limit text so it wont go off screen
+                    if (sortarray[i][3] < 12) {
+                        sortarray[i][3] = 12;
+                    }
+                    if (sortarray[i][3] > canvas.height) {
+                        sortarray[i][3] = canvas.height;
+                    }
+                    var diff = 999;
+                    if (i > 0) {
+                        diff = (sortarray[i][3] - sortarray[i - 1][3])
+                    }
 
-        // start the drawing of the line here -
+                    if (diff < 12) {
+                        // not displaying overlapping values
+                        // ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx +50, sortarray[i][3]+(14-diff));
+                    } else {
+                        ctx.fillStyle = sortarray[i][4];
+                        ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx + 5, sortarray[i][3]);
+                        ctx.fillStyle = "#000000";
 
-        var startx = (clicktime - document.getElementById("g1_start").value) * ppms;
-        ctx.font = "10pt Arial";
-        ctx.fillStyle = "#000000";
-        ctx.fillText(new Date(clicktime).toLocaleTimeString(), startx, 25);
-        ctx.font = "Bold 12pt Arial";
-        ctx.fillStyle = "#000000";
-sortarray = [];
-for (sensor in gatherer.graph[document.getElementById("graph").value].sensor) {
-     x=gatherer.graph[document.getElementById("graph").value].sensor[sensor]
+                        ctx.fillText(sortarray[i][1].toFixed(2), startx - 50, sortarray[i][3]);
+                    }
 
-    if (x.visible && (x.selected || g.selected=='')){
-        dataelement = g.line1Element;
-        while (dataelement > 0 && g.data[dataelement][sensor] == undefined) {
-            dataelement--;
-        }
-       //sensoor,value,x,y of point,color
-        sortarray.push([sensor, (g.data[dataelement][sensor] * x.multiplier),((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor] * x.multiplier), x.min, x.max, canvas.height), x.color])
+                }
+            } else {
+                // something selected deal with the min max overlaping issue
+
+                for (i = 0; i < sortarray.length; ++i) {
+                    // limit text so it wont go off screen
+                    if (sortarray[i][3] < 12) {
+                        sortarray[i][3] = 12;
+                    }
+                    if (sortarray[i][3] > canvas.height) {
+                        sortarray[i][3] = canvas.height;
+                    }
+
+                }
+                if ((sortarray[1][3] - sortarray[0][3]) < 12 || (sortarray[2][3] - sortarray[1][3]) < 12 || (gatherer.graph[document.getElementById("graph").value].details == 1)) {
+                    // collisions - just draw the sensor - could add min max back on the same line but right now doesn't seem useful
+                    ctx.fillStyle = sortarray[1][4];
+                    ctx.fillText(sensorNametoUserName(sortarray[1][0]), startx + 5, sortarray[1][3]);
+                    ctx.fillStyle = "#000000";
+                    ctx.fillText(sortarray[1][1].toFixed(2), startx - 50, sortarray[1][3]);
+                } else {
+                    for (i = 0; i < sortarray.length; ++i) {
+
+                        ctx.fillStyle = sortarray[i][4];
+                        ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx + 5, sortarray[i][3]);
+                        ctx.fillStyle = "#000000";
+                        ctx.fillText(sortarray[i][1].toFixed(2), startx - 50, sortarray[i][3]);
+
+                    }
+
+                }
 
 
-        }
-     }
-        // if (x != undefined && x.selected) {
-        //  ctx.moveTo(((g.data[dataelement].Time) - document.getElementById('g1_start').value) * ppms, gety((g.data[dataelement][sensor] * x.multiplier), x.min, x.max, canvas.height));
-        //   ctx.lineTo(startx -50 , (20*i));
-        //}
-
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.strokeStyle = "#000000";
-        ctx.moveTo(startx, 0);
-        ctx.lineTo(startx, canvas.height);
-        ctx.stroke();
-      sortarray.sort(function(a, b) {return a[3] - b[3]});
-
-        for (i=0;i<sortarray.length;++i){
-            // limit text so it wont go off screen
-            if ( sortarray[i][3] < 12){ sortarray[i][3] = 12;}
-            if ( sortarray[i][3] > canvas.height){ sortarray[i][3] = canvas.height;}
-            var diff = 999;
-            if (i> 0){
-                 diff = (sortarray[i][3]-sortarray[i-1][3])
             }
 
-            if ( diff < 12 ){
-               // not displaying overlapping values
-               // ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx +50, sortarray[i][3]+(14-diff));
-            }else
-            {
-                ctx.fillStyle =sortarray[i][4];
-                ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx +5, sortarray[i][3]);
-                ctx.fillStyle ="#000000";
-
-                ctx.fillText(sortarray[i][1].toFixed(2), startx -50, sortarray[i][3]);
-            }
-
-           // ctx.fillText(sensorNametoUserName(sortarray[i][0]), startx +5, sortarray[i][3]);
         }
-
     }
     this.checkTime = function(){
         var msSinceRedraw = new Date().getTime()-g.realTime;
@@ -590,12 +700,12 @@ this.graphButtonClick = function(x,y)
     if (y > g.height - 40) {
         if (x < 40) {
             console.log("left");
-            g.shift(g.start.value- g.end.value);
+            g.shift(g.end.value- g.start.value);
             return false
         }
         if (x > g.width - 40) {
             console.log("right");
-            g.shift(g.end.value- g.start.value);
+            g.shift(g.start.value- g.end.value);
                 return false
         }
     }
@@ -603,17 +713,23 @@ return true
 }
 this.shift = function(x){
 
+    console.log(g.start.value-x < g.start.min*1 ,(g.start.value-x),g.start.min*1,((g.start.value)-g.start.min*1)/3600000);
+    if ((g.start.value*1)-x < g.start.min*1 )
+    {
+        query('avg60',new Date((1*g.start.value)-x), new Date(g.start.min*1));
+        console.log("getting new data");
+        g.start.min = g.start.value-x;
+    }
     g.shifttime = x/50;
     g.shiftcount = 0;
     g.goshift();
-
 
 }
 this.goshift = function(){
     var start = new Date().getTime();
 
-    g.end.value = (g.end.value*1) +g.shifttime;
-    g.start.value = (g.start.value*1)+ g.shifttime;
+    g.end.value = (g.end.value*1) -g.shifttime;
+    g.start.value = (g.start.value*1)- g.shifttime;
 
     this.draw(this.maingraph,this.start.value,this.end.value);
     this.draw(this.overviewindicatorCanvas,this.start.value,this.end.value,true);

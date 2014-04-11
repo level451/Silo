@@ -152,7 +152,7 @@ exports.wsDataIn = function(data,id){
             try
             {
             //  console.log(resultdata);
-                console.log(webData.data.length);
+                //console.log("data length",webData.data.length);
 
                 websock.send(JSON.stringify(webData));
             }

@@ -23,8 +23,12 @@ function WebSocketSetup()
 }
 function onOpen(evt) {
     console.log("CONNECTED");
+    var thisgraph = gatherer.graph[document.getElementById("graph").value];
+    if (thisgraph.daysData != undefined){
+        query('avg60',new Date(new Date()-((24*thisgraph.daysData)*60*60000)),new Date(),'init');
+    }else{query('avg60',new Date(new Date()-((24*7)*60*60000)),new Date(),'init14',new Date());}
 
-    query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14',new Date());
+  //  query('avg60',new Date(new Date()-((24*4)*60*60000)),new Date(),'init14',new Date());
     //   doSend("WebSocket rocks");
 }
 function onClose(evt) {
@@ -43,7 +47,7 @@ function onError(evt) {
 
 function savesettings(){
 
-    console.log ('Gatherer settings save')
+    console.log ('Gatherer settings save');
     var sendobj = {};
     sendobj.packettype="Gatherer settings save";
     sendobj.data = gatherer;
@@ -324,7 +328,7 @@ function combineData(dold,dnew){
 }
 function sensorNametoUserName(sn){
    // return gatherer.id[ sn.substr(sn.indexOf("_")+1,1)].sensor[sn.substring(0,sn.indexOf("_"))].name
-
+    if (gatherer.id[ sn.substr(sn.indexOf("_")+1,1)] == undefined){return sn;}
     if (gatherer.id[ sn.substr(sn.indexOf("_")+1,1)].sensor[sn.substring(0,sn.indexOf("_"))].name == ""){
      return "("+sn+")";
     }else
