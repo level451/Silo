@@ -14,7 +14,8 @@ exports.setup = function(){
    //     seriallib.openSerialPort("/dev/ttyACM0"); //not windows
         websock.listen();
 // mongo
-    MongoClient.connect("mongodb://localhost:27017/gatherer", function(err, db)
+    //MongoClient.connect("mongodb://localhost:27017/gatherer", function(err, db)
+    MongoClient.connect("mongodb://10.6.1.138:27017/gatherer", function(err, db)
     {
         if (err)
         {
@@ -58,7 +59,11 @@ exports.setup = function(){
 
 
                     // open the seial port after mongo is open
-                    serial.openSerialPort('com6'); //windows
+                    //serial.openSerialPort('com6'); //windows
+                    //     seriallib.openSerialPort("/dev/ttyACM0"); //not windows usb
+
+                         seriallib.openSerialPort("/dev/ttyAMA0"); //not windows rs232
+
 
                 } else
                 {
