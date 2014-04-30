@@ -1,3 +1,94 @@
+
+
+#zoom {
+    position: absolute;
+    top: 341px;
+    left: 100px;
+    height: 28px;
+    transition: width 300ms cubic-bezier(0.17, 0.04, 0.03, 0.94);
+    overflow: hidden;
+    z-index: 2;
+    width:86.6%;
+    border:1px solid #000000;
+}
+
+
+#showhidezoom {
+    position:absolute;
+    top: 341px;
+    left: 60px;
+    padding:5px;
+    background: #26ae90;
+    width: 30px;
+    border-radius: 1px;
+    color: #FFF;
+    line-height:20px;
+    font-size:12px;
+    text-align:center;
+    margin:0px 0px;
+    z-index: 3;
+}
+
+
+
+#showhidezoomtoggle:checked~#zoom {
+    width: 0px;
+    border:none;
+}
+
+
+#showhidezoom:after {
+    content:"<<"
+}
+#showhidezoomtoggle:checked + label:after {
+    content:">>"
+}
+
+
+
+#Edit {
+
+    transition: width 3000ms cubic-bezier(0.17, 0.04, 0.03, 0.94);
+    overflow: hidden;
+    height:268px;
+    width:1200px;
+    display:block;
+
+}
+#showhideEdittoggle:checked~#Edit
+{
+    display:none;
+
+    width: 0%;
+}
+#showhideEdit {
+    position: absolute;
+
+    padding:5px;
+    background: #26ae90;
+    width: 30px;
+    border-radius: 1px;
+    color: #FFF;
+    line-height:20px;
+    font-size:12px;
+    text-align:center;
+    margin:0px 0px;
+    z-index: 3;
+}
+
+
+#showhideEdit:after {
+    content:">>"
+}
+#showhideEdittoggle:checked + label:after {
+    content:"<<"
+}
+
+
+
+
+
+
 #graphcontrols {
     border:1px solid #000000;
     width:400;
@@ -10,4 +101,27 @@
 }
 input[type=number].minmax{
     width : 50px;
+}
+canvas#g1_maingraph {
+    width: 1200px;
+    height:400px;
+}
+
+canvas#g1_maingraphscale {
+    width: 1200px;
+    height:400px;
+}
+div#graphdiv {
+    width: 1200px;
+}
+#graphtitle>h1 {
+    text-align: center;
+    contenteditable:true;
+}
+.neverdisplay
+{
+    display: none;
+}
+body {
+    margin: 0px;
 }

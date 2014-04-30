@@ -19,8 +19,6 @@ function graph(graphname){
     this.shiftcount = 0;
     this.shifttime = 0;
     this.realTime = new Date().getTime();
-    this.start.style.display="none";
-    this.end.style.display="none";
     this.mousedown=  function (e){
 
         e.preventDefault();
@@ -233,7 +231,7 @@ function graph(graphname){
                 }
             }
         }
-        if (this.endelement == 0 || this.endelement > this.data.length-1){ this.endelement = this.data.length-1}
+        if (this.endelement < 1 || this.endelement > this.data.length-1){ this.endelement = this.data.length-1}
 
         if (this.endelement ==  this.data.length || this.data[this.endelement].Time < e){
 
@@ -408,8 +406,8 @@ this.drawscale = function(canvas){
     ctx.globalAlpha=alpha;
     ctx.clearRect (0 , 0 , canvas.width , canvas.height );
     if ( gatherer.graph[document.getElementById("graph").value].details > 0) {
-        ctx.fillRect(0, canvas.height - 40, 40, 40);
-        ctx.fillRect(canvas.width - 40, canvas.height - 40, 40, 40);
+        ctx.fillRect(0, canvas.height - 60, 60, 60);
+        ctx.fillRect(canvas.width - 60, canvas.height - 60, 60, 60);
         var selected = g.selected;
         if (selected == undefined) {
             return;
@@ -652,7 +650,7 @@ this.drawscale = function(canvas){
                     }
 
                 }
-                if ((sortarray[1][3] - sortarray[0][3]) < 12 || (sortarray[2][3] - sortarray[1][3]) < 12 || (gatherer.graph[document.getElementById("graph").value].details == 1)) {
+                if (sortarray.length == 3  && ((sortarray[1][3] - sortarray[0][3]) < 12 || (sortarray[2][3] - sortarray[1][3]) < 12 || (gatherer.graph[document.getElementById("graph").value].details == 1))) {
                     // collisions - just draw the sensor - could add min max back on the same line but right now doesn't seem useful
                     ctx.fillStyle = sortarray[1][4];
                     ctx.fillText(sensorNametoUserName(sortarray[1][0]), startx + 5, sortarray[1][3]);
@@ -697,13 +695,13 @@ this.drawscale = function(canvas){
 
 this.graphButtonClick = function(x,y)
 {
-    if (y > g.height - 40) {
-        if (x < 40) {
+    if (y > g.height - 60) {
+        if (x < 60) {
             console.log("left");
             g.shift(g.end.value- g.start.value);
             return false
         }
-        if (x > g.width - 40) {
+        if (x > g.width - 60) {
             console.log("right");
             g.shift(g.start.value- g.end.value);
                 return false
@@ -716,7 +714,7 @@ this.shift = function(x){
     console.log(g.start.value-x < g.start.min*1 ,(g.start.value-x),g.start.min*1,((g.start.value)-g.start.min*1)/3600000);
     if ((g.start.value*1)-x < g.start.min*1 )
     {
-        query('avg60',new Date((1*g.start.value)-x), new Date(g.start.min*1));
+        query(gatherer.graph[document.getElementById("graph").value].daysDataResolution,new Date((1*g.start.value)-x), new Date(g.start.min*1));
         console.log("getting new data");
         g.start.min = g.start.value-x;
     }

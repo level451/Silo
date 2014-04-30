@@ -54,7 +54,7 @@
 <input type="range" min="0" max="255" id="packetred" onmouseup="quickled()" > RED <br>
 <input type="range" min="0" max="255" id="packetgreen" onmouseup="quickled()"> GREEN <br>
 <input type="range" min="0" max="255" id="packetblue" onmouseup="quickled()"> BLUE <br>
-<button onclick="sendpacket('r '+document.getElementById('packetdestination').value+' 0 100 63 0 0 0')">Clear</button>
+<button onclick="sendpacket('r '+document.getElementById('packetdestination').value+' 6 228 63 0 0 0')">Clear</button>
 
 </div>
 <div id="lcdoptions">
@@ -311,12 +311,16 @@
             delete s.dataType;
             var id = s.ID;
             delete s.ID;
+            if (s.Type == 1){
+                console.log("Confimed:", s.ID);
+                return;
+            }
             var gauges = document.getElementById("gauges");
             var gathererid = document.getElementById("gatherer"+id);
             if (gathererid == null)
             {
                 console.log("Gatherer "+id+" no div found");
-                gauges.innerHTML = gauges.innerHTML + '<div class="sensorinfo" height="250px" id="gatherer'+id+'"> Sensor'
+                gauges.innerHTML = gauges.innerHTML + '<div class="sensorinfo" height="250px" id="gatherer'+id+'"> Sensor'+id;
                 gathererid = document.getElementById("gatherer"+id);
             }
 

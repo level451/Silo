@@ -10,14 +10,16 @@
 
 
 <html>
-<div>
-    <h1  onblur='nameChange()' onkeydown='if (event.keyCode == 13){nameChange();return false;}' contenteditable="true" id="title" align="center"></h1>
 
+<input class="neverdisplay" type="checkbox" id="showhideEdittoggle" />
+<label id="showhideEdit" for="showhideEdittoggle"></label>
 
+<div id="Edit">
+<div id="graphtitle">
+    <h1 id="title" onblur='nameChange()' onkeydown='if (event.keyCode == 13){nameChange();return false;}'></h1>
 </div>
 <div id="graphheader">
 
-<button onclick="query('avg60',new Date(new Date()-((24*14)*60*60000)),new Date(),'init14');">query 14 days 1 hour</button>
 <select id="graph" onchange="refreshNewGraph()"></select>
 
     <button onclick="savesettings()">Save</button>
@@ -26,7 +28,10 @@
     <button onclick="query('avg1',new Date(g.start.value*1),new Date(g.end.value*1));">splice min</button>
     <button onclick="query('log',new Date(g.start.value*1),new Date(g.end.value*1));">splice</button>
 </div>
-<div id="graphcontrols">
+
+
+<div id="editItemsOnGraph">
+
     <select ID="selectedgatherer" onchange="refreshavailablesensors(this)">
         <%for (var prop in gathererSettings.id){%>
         <option value =<%=prop%>><%=gathererSettings.id[prop].name+"("+prop+")"%></option>
@@ -37,54 +42,64 @@
     <button onclick="addsensortograph()">Add to Graph</button>
 
 
-    <select id="graphitems" size="5" width = "100" onchange="graphItemsOnChange()"></select>
+    <select id="graphitems" size="1" width = "100" onchange="graphItemsOnChange()"></select>
     <button onclick="removeItemFromGraph()">Remove</button>
     <input type="color" id="color" onchange="gc_change()">
 
     <input class="minmax" type="number" id="daysData" onchange="gc_change()"> Days of Data
     <select ID="daysDataResolution" onchange="gc_change()">
-        <option value ="auto1440">Day Avg</option>
-        <option value ="auto60">Hour Avg</option>
-        <option value ="auto1">Min Avg</option>
+        <option value ="avg1440">Day Avg</option>
+        <option value ="avg60">Hour Avg</option>
+        <option value ="avg1">Min Avg</option>
         <option value ="log">Actual</option>
     </select>
-
-    <div>
-
-    <input class = "minmax" type="number"   step="1" id="gmin"  onchange="gc_change()" > Graph Min
-    <input class = "minmax" type="number"  step="1" id="gmax"   onchange="gc_change()" > Graph Max
-    <input class = "minmax" type ="number" default ="1" id="multiplier"onchange="gc_change()"> Multiplier
-    <input type="checkbox" id="usegraphrange" onchange="gc_change()" >Use Graph Range
+        <input class = "minmax" type ="number" default ="1" id="multiplier"onchange="gc_change()"> Multiplier
     </div>
 
 
+<input type="checkbox" id="hideeditItemsOnGraph" onchange="gc_change()" >Hide Add Items
+<input class="neverdisplay" type="range" min="0" max="255" step="1" id="g1_start" >
+<input class="neverdisplay" type="range" min="0" max="255" step="1" id="g1_end" >
+
+<div id="overviewgraphdiv" style="width: 1200px;">
+
+
+    <canvas id="g1_overview" width="1200px" height="100px" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 1;" tabindex="1"></canvas>
+    <canvas id="g1_overviewindicator" width="1200px" height="100" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 0;" tabindex="1"></canvas><br>
 </div>
-<div id="overviewgraphdiv" >
+    <div id  = "buttons"></div>
 
-    <canvas id="g1_overview" width="1200" height="100" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 1;" tabindex="1"></canvas>
-    <canvas id="g1_overviewindicator" width="1200" height="100" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 0;" tabindex="1"></canvas><br>
-
-<div>
-<input type="range" min="0" max="255" step="1" id="g1_start" onchange="g.drawMain()">
-<input type="range" min="0" max="255" step="1" id="g1_end"  onchange="g.drawMain()" >
-<button onclick="rescale(0,.08333)">Last 5</button>
-<button onclick="rescale(0,.25)">Last 15</button>
-    <button onclick="rescale(0,1)">Last Hour</button>
-    <button onclick="rescale(0,6)">Last 6</button>
-    <button onclick="rescale(0,12)">Last 12</button>
-    <button onclick="rescale(0,24)">Last 24</button>
-    <button onclick="rescale(24,48)">prev 24</button>
-    <input class = "minmax" type="number"   step="1" id="min"  onchange="gc_change()" > Min
-    <input class = "minmax"type="number"  step="1" id="max"   onchange="gc_change()" > Max
-
-    <button onclick="autominmax(document.getElementById('graphitems').value)">Autoscale</button>
-    <br>
-<div id  = "buttons"></div>
-</div>
 </div>
 <div id="graphdiv">
-    <canvas id="g1_maingraph" width="1200" height="400" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 0;" tabindex="1"></canvas>
-    <canvas id="g1_maingraphscale" width="1200" height="400" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 1;" tabindex="1"></canvas>
+    <div>
+    <input class="neverdisplay" type="checkbox" id="showhidezoomtoggle" />
+    <label id="showhidezoom" for="showhidezoomtoggle"></label>
+
+    <div  id = "zoom"  >
+
+        <button id="details" type="button" data-sensor="" onclick="details();">Details</button>
+        <button onclick="rescale(0,.08333)">Last 5</button>
+        <button onclick="rescale(0,.25)">Last 15</button>
+        <button onclick="rescale(0,1)">Last Hour</button>
+        <button onclick="rescale(0,3)">Last 3</button>
+        <button onclick="rescale(0,6)">Last 6</button>
+        <button onclick="rescale(0,12)">Last 12</button>
+        <button onclick="rescale(0,24)">Last 24</button>
+        <input class = "minmax" type="number"   step="1" id="min"  onchange="gc_change()" > Min
+        <input class = "minmax"type="number"  step="1" id="max"   onchange="gc_change()" > Max
+
+        <button onclick="autominmax(document.getElementById('graphitems').value)">Autoscale</button>
+    </div>
+
+
+
+    <canvas id="g1_maingraph" height ="400px" width="1200px"  style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 0;" tabindex="1"></canvas>
+    <canvas id="g1_maingraphscale" height = "400px" width="1200px" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 1;" tabindex="1"></canvas>
+
+
+</div>
+
+
 
 </div>
 </body>
@@ -106,11 +121,10 @@
         window.addEventListener("resize",resize,false);
 
         if (gatherer.graph == undefined){
-        gatherer.graph = [];
-        gatherer.graph[0] = {};
-        gatherer.graph[0].name="Graph 0";
-        gatherer.graph[0].sensor={};
-
+            gatherer.graph = [];
+            gatherer.graph[0] = {};
+            gatherer.graph[0].name="Graph 0";
+            gatherer.graph[0].sensor={};
 
     }
         refreshavailablesensors(setGraphFromName("<%=graph%>"));
@@ -124,7 +138,11 @@
 
 
     }
-    document.getElementById("title").innerHTML=gatherer.graph[document.getElementById("graph").value].name;
+    var sg =gatherer.graph[document.getElementById("graph").value];
+
+        document.getElementById("title").innerHTML=sg.name;
+
+
         //resize();
     }
     function msghandler(indata){
@@ -221,15 +239,18 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
 
     document.getElementById("graphitems").innerHTML=temp;
     var temp='';
-
+   g.selected = "";
     for (var prop in gatherer.graph[document.getElementById("graph").value].sensor)
     {
 
         temp=temp+'<button type="button" id="b_'+prop+'" data-sensor="'+prop+'" onclick="showHide(this);">'+sensorNametoUserName(prop)+'</button>';
+        if (gatherer.graph[document.getElementById("graph").value].sensor[prop].selected){
+           g.selected = prop;
+        }
+
 
     }
     temp=temp+'<button type="button" data-sensor="" onclick="selectNone();">Select None</button>';
-    temp=temp+'<button id="details" type="button" data-sensor="" onclick="details();">Details</button>';
 
     document.getElementById("buttons").innerHTML=temp;
 
@@ -278,29 +299,44 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
         g.drawscale(g.maingraphscale);
     }
 function gc_change(){
+    var sg =  gatherer.graph[document.getElementById("graph").value];
+    // this is what sets the gatherer values from the form controls
+   //sg.gmax = document.getElementById("gmax").value;
+    //sg.gmin = document.getElementById("gmin").value;
+    sg.hideeditItemsOnGraph=document.getElementById("hideeditItemsOnGraph").checked;
+    if (sg.hideeditItemsOnGraph){
+        document.getElementById("editItemsOnGraph").style.display="none";
+    }else
+    {
+        document.getElementById("editItemsOnGraph").style.display="inline";
+    }
 
-    gatherer.graph[document.getElementById("graph").value].gmax = document.getElementById("gmax").value;
-    gatherer.graph[document.getElementById("graph").value].gmin = document.getElementById("gmin").value;
-    if (gatherer.graph[document.getElementById("graph").value].daysData != document.getElementById("daysData").value && document.getElementById("daysData").value > 0){
-        gatherer.graph[document.getElementById("graph").value].daysData = document.getElementById("daysData").value;
-        var thisgraph = gatherer.graph[document.getElementById("graph").value];
+    if ((sg.daysData != document.getElementById("daysData").value && document.getElementById("daysData").value > 0)
+            || sg.daysDataResolution != document.getElementById("daysDataResolution").value){
+        sg.daysDataResolution =document.getElementById("daysDataResolution").value;
+        sg.daysData = document.getElementById("daysData").value;
+        if (sg.daysDataResolution == undefined){sg.daysDataResolution = 'avg60'}
+
+
         g.data=[];
-
         g.dataStart = 0;
         g.dataEnd=0;
-        query('avg60',new Date(new Date()-((24*thisgraph.daysData)*60*60000)),new Date(),'init14',new Date());
+        g.startelement = 0;
+        g.endelement = 0;
+        query( sg.daysDataResolution,new Date(new Date()-((24*sg.daysData)*60*60000)),new Date(),'init',new Date());
 
     }
 
 
-    var x = gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value];
+    var x = sg.sensor[document.getElementById("graphitems").value];
     if (x == undefined){return;}
 
     x.color = document.getElementById("color").value;
     x.min=document.getElementById("min").value;
     x.max=document.getElementById("max").value;
     x.multiplier = document.getElementById("multiplier").value;
-    x.usegraphrange=document.getElementById("usegraphrange").checked;
+
+
 
     g.drawMain();
     g.drawOverview();
@@ -310,6 +346,18 @@ function gc_change(){
 }
 
 function graphItemsOnChange(){
+   // I know the name is stupid
+    // this is what sets the values of the controls on the form
+    var sg =  gatherer.graph[document.getElementById("graph").value];
+    if (sg.hideeditItemsOnGraph){
+        document.getElementById("editItemsOnGraph").style.display="none";
+    }else
+    {
+        document.getElementById("editItemsOnGraph").style.display="inline";
+    }
+    document.getElementById("daysDataResolution").value = sg.daysDataResolution;
+    document.getElementById("hideeditItemsOnGraph").checked = sg.hideeditItemsOnGraph;
+
     var thisgraph = gatherer.graph[document.getElementById("graph").value];
     if (thisgraph.daysData != undefined)
     {document.getElementById("daysData").value = thisgraph.daysData;}
@@ -328,6 +376,7 @@ function graphItemsOnChange(){
     for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
     {gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected = false;}
     gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value].selected = true;
+    console.log("here");
     g.selected = document.getElementById("graphitems").value;
     g.drawMain();
 
@@ -339,14 +388,12 @@ function graphItemsOnChange(){
     if (x.max != undefined){document.getElementById("max").value=x.max;}
     if (x.min != undefined){document.getElementById("min").value=x.min;}
     if (x.multiplier != undefined){document.getElementById("multiplier").value=x.multiplier;}
-    if (x.usegraphrange == undefined){x.usegraphrange = false;}
-    if (gatherer.graph[document.getElementById("graph").value].gmax == undefined){document.getElementById("gmax").value = 100;}
-    if (gatherer.graph[document.getElementById("graph").value].gmin == undefined){document.getElementById("gmin").value = 0;}
-    gatherer.graph[document.getElementById("graph").value].gmax = document.getElementById("gmax").value;
-    document.getElementById("usegraphrange").checked=x.usegraphrange;
+    //if (gatherer.graph[document.getElementById("graph").value].gmax == undefined){document.getElementById("gmax").value = 100;}
+    //if (gatherer.graph[document.getElementById("graph").value].gmin == undefined){document.getElementById("gmin").value = 0;}
+    //gatherer.graph[document.getElementById("graph").value].gmax = document.getElementById("gmax").value;
 
     g.drawscale(g.maingraphscale);
-    //refreshbuttons();
+    refreshbuttons();
 
 }
 
@@ -375,11 +422,12 @@ var data = e.dataset;
         x.visible = false;
         x.selected = false;
         document.getElementById("graphitems").value = "";
+        g.selected = "";
 
     } else if (x.visible){
         document.getElementById("graphitems").value = data.sensor;
         x.selected = true;
-
+       g.selected = data.sensor;
 
     } else
     {
@@ -441,6 +489,8 @@ function refreshbuttons(){
             g.selected = sensor;
             document.getElementById("b_"+sensor).style.font="bold 12px arial";
             document.getElementById("b_"+sensor).style.background=gatherer.graph[document.getElementById("graph").value].sensor[sensor].color;
+            document.getElementById("graphitems").value = sensor;
+
         }else
         {
 
@@ -470,7 +520,11 @@ function addNewGraph(name)
     document.getElementById("graph").value = gatherer.graph.length-1;
     gatherer.graph[document.getElementById("graph").value].sensor = {};
     gatherer.graph[document.getElementById("graph").value].name = name;
-    gatherer.graph[document.getElementById("graph").value].selected = "";
+   // gatherer.graph[document.getElementById("graph").value].selected = "";
+    g.selected = "";
+    gatherer.graph[document.getElementById("graph").value].daysData = ".5";
+    gatherer.graph[document.getElementById("graph").value].daysDataResolution = "avg1";
+    gatherer.graph[document.getElementById("graph").value].details = 2;
     refreshavailablesensors();
 }
 function refreshNewGraph()
@@ -481,6 +535,7 @@ function refreshNewGraph()
     g.drawMain();
     g.drawOverview();
     refreshbuttons();
+    graphItemsOnChange();
 }
 function removeItemFromGraph(){
 delete gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("graphitems").value]
@@ -511,7 +566,6 @@ function setGraphFromName(name){
 }
 function nameChange()
 {
-    console.log('aasdf')
     gatherer.graph[document.getElementById("graph").value].name= event.srcElement.innerHTML;
     refreshavailablesensors();
 }

@@ -24,9 +24,10 @@ function WebSocketSetup()
 function onOpen(evt) {
     console.log("CONNECTED");
     var thisgraph = gatherer.graph[document.getElementById("graph").value];
+    if (thisgraph.daysDataResolution == undefined){thisgraph.daysDataResolution = 'avg60';}
     if (thisgraph.daysData != undefined){
-        query('avg60',new Date(new Date()-((24*thisgraph.daysData)*60*60000)),new Date(),'init');
-    }else{query('avg60',new Date(new Date()-((24*7)*60*60000)),new Date(),'init14',new Date());}
+        query(thisgraph.daysDataResolution,new Date(new Date()-((24*thisgraph.daysData)*60*60000)),new Date(),'init');
+    }else{query(thisgraph.daysDataResolution,new Date(new Date()-((24*7)*60*60000)),new Date(),'init14',new Date());}
 
   //  query('avg60',new Date(new Date()-((24*4)*60*60000)),new Date(),'init14',new Date());
     //   doSend("WebSocket rocks");

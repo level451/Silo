@@ -9,7 +9,6 @@ serial = require('./Seriallib');
 MongoClient = require('mongodb').MongoClient;
 lastdata = {}
 
-
 exports.setup = function(){
 
    //     seriallib.openSerialPort("/dev/ttyACM0"); //not windows

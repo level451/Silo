@@ -15,7 +15,7 @@ function savetimer(){
     gatherer.id[document.getElementById("selectedgatherer").value].t2s=document.getElementById('t2s').value;
     gatherer.id[document.getElementById("selectedgatherer").value].t3m=document.getElementById('t3m').value;
     gatherer.id[document.getElementById("selectedgatherer").value].t3s=document.getElementById('t3s').value;
-    var temp =   'r '+document.getElementById("selectedgatherer").value+' 0 151 59 ';
+    var temp =   'r '+document.getElementById("selectedgatherer").value+' 0 111 59 ';
     temp = temp +gatherer.id[document.getElementById("selectedgatherer").value].t0m+ ' '+(gatherer.id[document.getElementById("selectedgatherer").value].t0s)*4+ ' ';
     temp = temp +gatherer.id[document.getElementById("selectedgatherer").value].t1m+ ' '+(gatherer.id[document.getElementById("selectedgatherer").value].t1s)*4+ ' ';
     temp = temp +gatherer.id[document.getElementById("selectedgatherer").value].t2m+ ' '+(gatherer.id[document.getElementById("selectedgatherer").value].t2s)*4+ ' ';
@@ -36,7 +36,7 @@ function t0timer(){
 function writetoeeprom(address){
     //save the value to eeprom and store it in settings as there currently is no way to retrieve it for display - only exicute it
 
-    sendpacket('r '+document.getElementById("selectedgatherer").value+' 0 151 '+address+' '+document.getElementById('e'+address).value );
+    sendpacket('r '+document.getElementById("selectedgatherer").value+' 0 111 '+address+' '+document.getElementById('e'+address).value );
     if (gatherer.id[document.getElementById("selectedgatherer").value].eeprom == undefined){
         gatherer.id[document.getElementById("selectedgatherer").value].eeprom={};
     }
@@ -51,16 +51,19 @@ function buildpacket(){
     var temp = '';
     temp = temp + document.getElementById("packetdestination").value+ " "+document.getElementById("packetsource").value; //byte 0-1
     temp = temp + " "+type.value+" "; //byte 2
-    console.log(type.value.substr(0,2))
+    console.log(type.value.substr(0,2));
     switch (type.value.substr(0,3)*1){ //byte 3
         case 50:
             console.log("50");
             //temp=temp+"9";
             break;
+
         case 52:
+            // read power sensors level 9 accuracy
             temp=temp+"9";
             break;
         case 53:
+            // read power sensors level 9 accuracy
             temp=temp+"9"; //
             break;
         case 100:
@@ -69,7 +72,7 @@ function buildpacket(){
             temp=temp + document.getElementById("packetred").value+" "+ document.getElementById("packetgreen").value+ " "+document.getElementById("packetblue").value;
 
             break;
-        case 200:
+        case 120:
             temp=temp +(document.getElementById("lcdcommand").value*1+document.getElementById("lcdcolor").value*1);
             break;
         default:
@@ -80,7 +83,7 @@ function buildpacket(){
         temp = temp + " "+ document.getElementById("startx").value +" "+document.getElementById("starty").value; //lcd x/y
         ptext = ptext + ' send results to '+  document.getElementById("packetsource").options[ document.getElementById("packetsource").selectedIndex].innerHTML;
         ptext = ptext + ' '+  document.getElementById("packetlcd").options[ document.getElementById("packetlcd").selectedIndex].innerHTML;
-    }else if(type.value==200)
+    }else if(type.value==120)
     {
         switch (document.getElementById("lcdcommand").value*1){
             case 0:
@@ -113,7 +116,7 @@ function buildpacket(){
     return temp;
 }
 function quickbacklight(){
-    sendpacket('r '+document.getElementById("packetdestination").value+' 0 200 0 '+ document.getElementById("backlight").value);
+    sendpacket('r '+document.getElementById("packetdestination").value+' 0 120 0 '+ document.getElementById("backlight").value);
 }
 
 function quickled(){
@@ -147,10 +150,10 @@ function createpacketoptionrefresh(inx){
             }
 
         }
-        temp=temp+'<option value="50 9">Read All 1-wire sensors</option>';
+        temp=temp+'<option value="50 10">Read All 1-wire sensors</option>';
         temp=temp+'<option value=59>Read All Sensors</option>';
         temp=temp+'<option value=100>SET RGB Leds</option>';
-        temp=temp+'<option value=200>LCD Commands</option>';
+        temp=temp+'<option value=120>LCD Commands</option>';
         type.innerHTML=temp;
     }
     //   console.log(type);
@@ -193,7 +196,7 @@ function createpacketoptionrefresh(inx){
     if(type.value==100){document.getElementById("leds").style.display = 'block';
     }else
     {document.getElementById("leds").style.display = 'none';}
-    if(type.value==200){
+    if(type.value==120){
         document.getElementById("lcdoptions").style.display = 'inline-block';
         document.getElementById("lcdcommand").style.display = 'inline';
 
