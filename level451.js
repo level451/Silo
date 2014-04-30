@@ -59,10 +59,10 @@ exports.setup = function(){
 
 
                     // open the seial port after mongo is open
-                    //serial.openSerialPort('com6'); //windows
-                    //     seriallib.openSerialPort("/dev/ttyACM0"); //not windows usb
+        //            serial.openSerialPort('com6'); //windows
+                    //     serial.openSerialPort("/dev/ttyACM0"); //not windows usb
 
-                         seriallib.openSerialPort("/dev/ttyAMA0"); //not windows rs232
+                         serial.openSerialPort("/dev/ttyAMA0"); //not windows rs232
 
 
                 } else
