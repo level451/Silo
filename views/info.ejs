@@ -24,7 +24,8 @@
 <button onclick = "viewtoggle('editsettings')">Edit</button>
 <button onclick = "viewtoggle('editeeprom')">EEprom</button>
 <button onclick = "createpacket()">Create Packet</button>
-
+<button onclick = "radioPingTest(document.getElementById('selectedgatherer').value)">Ping </button>
+<button onclick = "deleteSelectedGatherer()">Delete </button>
 
 <div  class="sensorinfo" id="createpacket" style="display:none;">
 
@@ -104,7 +105,7 @@
     <input type="range" min="0" max="59.75" step=".25" id="t0ss" onchange="document.getElementById('t0s').value=this.value" > Seconds <br>
     Min <input type="number" id="t0m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t0ms').value=this.value">
     Sec <input type="number" id="t0s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t0ss').value=this.value"><br>
-        <button onclick="savetimer()">Save</button>
+        <button id = "savetimer" onclick="savetimer(this)">Save</button>
     </div>
     <div style="display:inline-block">
         Timer 1<br>
@@ -112,7 +113,7 @@
         <input type="range" min="0" max="59.75" step=".25" id="t1ss" onchange="document.getElementById('t1s').value=this.value" > Seconds <br>
         Min <input type="number" id="t1m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t1ms').value=this.value">
         Sec <input type="number" id="t1s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t1ss').value=this.value"><br>
-        <button onclick="savetimer()">Save</button>
+        <button onclick="savetimer(this)">Save</button>
     </div>
     <div style="display:inline-block">
         Timer 2<br>
@@ -120,7 +121,7 @@
         <input type="range" min="0" max="59.75" step=".25" id="t2ss" onchange="document.getElementById('t2s').value=this.value" > Seconds <br>
         Min <input type="number" id="t2m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t2ms').value=this.value">
         Sec <input type="number" id="t2s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t2ss').value=this.value"><br>
-        <button onclick="savetimer()">Save</button>
+        <button onclick="savetimer(this)">Save</button>
     </div>
     <div style="display:inline-block">
         Timer 3<br>
@@ -128,15 +129,20 @@
         <input type="range" min="0" max="59.75" step=".25" id="t3ss" onchange="document.getElementById('t3s').value=this.value" > Seconds <br>
         Min <input type="number" id="t3m" min="0" max="255"  onkeypress="return false" onchange="document.getElementById('t3ms').value=this.value">
         Sec <input type="number" id="t3s" min="0" max="59.75" onkeypress="return false"  step =".25" onchange="document.getElementById('t3ss').value=this.value"><br>
-        <button onclick="savetimer()">Save</button>
+        <button onclick="savetimer(this)">Save</button>
     </div>
     <div id="startup">
     0-14 startup<br>
-    <%for (var i=0; i<15; ++i){%>
-    <%="EEprom"+ i%><input id=<%='e'+i%>>
+    <%for (var i=0; i<10; ++i){%>
+    <%="EEprom0"+ i%><input id=<%='e'+i%>>
     <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
-    <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+    <button id = "eeprom<%=i%>" onclick="writetoeeprom(<%=i%>,this)">Write to EEprom</button>    <br>
     <%}%>
+        <%for (var i=10; i<15; ++i){%>
+        <%="EEprom"+ i%><input id=<%='e'+i%>>
+        <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
+        <button id = "eeprom<%=i%>" onclick="writetoeeprom(<%=i%>,this)">Write to EEprom</button>    <br>
+        <%}%>
 
 </div>
     <div id="timer1">
@@ -144,25 +150,25 @@
         <%for (var i=15; i<30; ++i){%>
         <%="EEprom"+ i%><input id=<%='e'+i%>>
         <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <button id = "eeprom<%=i%>" onclick="writetoeeprom(<%=i%>,this)">Write to EEprom</button>    <br>
         <%}%>
         Timer 1<br>
         <%for (var i=30; i<33; ++i){%>
         <%="EEprom"+ i%><input id=<%='e'+i%>>
         <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <button id = "eeprom<%=i%>" onclick="writetoeeprom(<%=i%>,this)">Write to EEprom</button>    <br>
         <%}%>
         Timer 2<br>
         <%for (var i=33; i<36; ++i){%>
         <%="EEprom"+ i%><input id=<%='e'+i%>>
         <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <button id = "eeprom<%=i%>" onclick="writetoeeprom(<%=i%>,this)">Write to EEprom</button>    <br>
         <%}%>
         Timer 3<br>
         <%for (var i=36; i<39; ++i){%>
         <%="EEprom"+ i%><input id=<%='e'+i%>>
         <button onclick="document.getElementById('<%='e'+i%>').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(<%=i%>)">Write to EEprom</button>    <br>
+        <button id = "eeprom<%=i%>" onclick="writetoeeprom(<%=i%>,this)">Write to EEprom</button>    <br>
         <%}%>
 
     </div>
@@ -171,86 +177,84 @@
         Menu Enter <br>
         EEprom 39<input id="e39">
         <button onclick="document.getElementById('e39').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(39)">Write to EEprom</button>    <br>
+        <button id = "eeprom39" onclick="writetoeeprom(39,this)">Write to EEprom</button>    <br>
         EEprom 40<input id="e40">
         <button onclick="document.getElementById('e40').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(40)">Write to EEprom</button>    <br>
+        <button id = "eeprom40" onclick="writetoeeprom(40,this)">Write to EEprom</button>    <br>
 
         Menu 1 <br>
         EEprom 41<input id="e41">
         <button onclick="document.getElementById('e41').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(41)">Write to EEprom</button>    <br>
+        <button id = "eeprom41" onclick="writetoeeprom(41,this)">Write to EEprom</button>    <br>
         EEprom 42<input id="e42">
         <button onclick="document.getElementById('e42').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(42)">Write to EEprom</button>    <br>
+        <button id = "eeprom42" onclick="writetoeeprom(42,this)">Write to EEprom</button>    <br>
         Menu 2 <br>
         EEprom 43<input id="e43">
         <button onclick="document.getElementById('e43').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(43)">Write to EEprom</button>    <br>
+        <button id = "eeprom43" onclick="writetoeeprom(43,this)">Write to EEprom</button>    <br>
         EEprom 44<input id="e44">
         <button onclick="document.getElementById('e44').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(44)">Write to EEprom</button>    <br>
+        <button id = "eeprom44" onclick="writetoeeprom(44,this)">Write to EEprom</button>    <br>
         Menu 3 <br>
         EEprom 45<input id="e45">
         <button onclick="document.getElementById('e45').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(45)">Write to EEprom</button>    <br>
+        <button id = "eeprom45" onclick="writetoeeprom(45,this)">Write to EEprom</button>    <br>
         EEprom 46<input id="e46">
         <button onclick="document.getElementById('e46').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(46)">Write to EEprom</button>    <br>
+        <button id = "eeprom46" onclick="writetoeeprom(46,this)">Write to EEprom</button>    <br>
         Menu 4 <br>
         EEprom 47<input id="e47">
         <button onclick="document.getElementById('e47').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(47)">Write to EEprom</button>    <br>
+        <button id = "eeprom47" onclick="writetoeeprom(47,this)">Write to EEprom</button>    <br>
         EEprom 48<input id="e48">
         <button onclick="document.getElementById('e48').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(48)">Write to EEprom</button>    <br>
+        <button id = "eeprom48" onclick="writetoeeprom(48,this)">Write to EEprom</button>    <br>
         Menu 5 <br>
         EEprom 49<input id="e49">
         <button onclick="document.getElementById('e49').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(49)">Write to EEprom</button>    <br>
+        <button id = "eeprom49" onclick="writetoeeprom(49,this)">Write to EEprom</button>    <br>
         EEprom 50<input id="e50">
         <button onclick="document.getElementById('e50').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(50)">Write to EEprom</button>    <br>
+        <button id = "eeprom50" onclick="writetoeeprom(50,this)">Write to EEprom</button>    <br>
         Menu Exit <br>
         EEprom 51<input id="e51">
         <button onclick="document.getElementById('e51').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(51)">Write to EEprom</button>    <br>
+        <button id = "eeprom51" onclick="writetoeeprom(51,this)">Write to EEprom</button>    <br>
         EEprom 52<input id="e52">
         <button onclick="document.getElementById('e52').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(52)">Write to EEprom</button>    <br>
+        <button id = "eeprom52" onclick="writetoeeprom(52,this)">Write to EEprom</button>    <br>
 
         Contact Closed <br>
         EEprom 53<input id="e53">
         <button onclick="document.getElementById('e53').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(53)">Write to EEprom</button>    <br>
+        <button id = "eeprom53" onclick="writetoeeprom(53,this)">Write to EEprom</button>    <br>
         EEprom 54<input id="e54">
         <button onclick="document.getElementById('e54').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(54)">Write to EEprom</button>    <br>
+        <button id = "eeprom54" onclick="writetoeeprom(54,this)">Write to EEprom</button>    <br>
         EEprom 55<input id="e55">
         <button onclick="document.getElementById('e55').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(55)">Write to EEprom</button>    <br>
+        <button id = "eeprom55" onclick="writetoeeprom(55,this)">Write to EEprom</button>    <br>
         Contact Opened <br>
         EEprom 56<input id="e56">
         <button onclick="document.getElementById('e56').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(56)">Write to EEprom</button>    <br>
+        <button id = "eeprom56" onclick="writetoeeprom(56,this)">Write to EEprom</button>    <br>
         EEprom 57<input id="e57">
         <button onclick="document.getElementById('e57').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(57)">Write to EEprom</button>    <br>
+        <button id = "eeprom57" onclick="writetoeeprom(57,this)">Write to EEprom</button>    <br>
         EEprom 58<input id="e58">
         <button onclick="document.getElementById('e58').value = buildpacket(); ">Grab</button>
-        <button onclick="writetoeeprom(58)">Write to EEprom</button>    <br>
+        <button id = "eeprom58" onclick="writetoeeprom(58,this)">Write to EEprom</button>    <br>
 
     </div>
 
-    <canvas id="screen" width="128" height="160" style="border:1px solid #000000;" tabindex="1">
 
-    </canvas>
     <br>
 </div>
 
 <div  class="sensorinfo" id="editsettings" style="display:none;">
    <h2>Sensors</h2>
-    <button onclick="addnewgatherer()">New</button>
+    <button onclick="addnewgatherer()">Add New Sensor</button>
     ID <input id="ID" class="edit" value="<%=1%>" onblur="validateid(this)">
     Name <input id="NAME" class="edit" value="<%=gathererSettings.id[1].name%>" onblur="validatename(this)">
 <div>
@@ -283,6 +287,7 @@
 </html>
 
 <script>
+   retryWriteObject = {};
     function onload(){
         WebSocketSetup(); // start the websocket
         readsensors(); // populate html with gatherer values
@@ -306,6 +311,10 @@
     function msghandler(indata){
         s=JSON.parse(indata);
         //console.log(s);
+        if (s.packettype == "radioPingTestResults"){
+            alert("Ping results from "+ s.unit+": "+ s.text);
+
+        }
         if (s.dataType == "Serial")
         {
             delete s.dataType;
@@ -335,6 +344,43 @@
                 drawgauage(sensors,s[sensors]);
             }
 
+        }
+        if (s.packettype == "addedNewGatherer"){
+
+            var id = document.getElementById("ID");
+            var name = document.getElementById("NAME");
+            id.value = s.id;
+            name.value = ""
+
+            gatherer.id[id.value] = {}
+            readsensors();
+            refreshselectedgatherer();
+            validateid(id);
+            validateselectedgatherer(id);
+
+        }
+        if (s.packettype == "infoToDisplay"){
+            console.log(s.text);
+            alert(s.text);
+
+        }
+        if (s.packettype == "commandResults") {
+            rslt = s.rslt;
+            text = s.text;
+            if (rslt == 0){
+                savesettings();
+                retryWriteObject.style.background='';
+
+            }else
+            {
+                retryWriteObject.style.background='rgb(200,50,50)';
+            }
+
+
+            console.log("retryWrite callback success", rslt, text);
+            if (callback){
+                return callback(rslt,text);
+            }
         }
         if (s.packettype == "query")
         {

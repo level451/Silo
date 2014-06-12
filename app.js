@@ -8,7 +8,7 @@ var routes = require('./routes');
 var user = require('./routes/user');
 var http = require('http');
 var path = require('path');
-
+var pmp = require('pmp');
 var app = express();
 
 // all environments
@@ -42,4 +42,17 @@ http.createServer(app).listen(app.get('port'), function(){
 });
 global.level451 = require('./level451');
 global.ejs = require('./ejs');
+// map the ports
+
+pmp.portMap('',3000,4000,60*60*48,function(err,rslt){
+    console.log(err,rslt);
+    pmp.portMap(rslt.gateway,8080,8080,60*60*48,function(err,rslt){
+        console.log(err,rslt);
+    });
+
+});
+
+
+
+
 level451.setup();

@@ -2,7 +2,9 @@
  * Created by todd on 2/21/14.
  */
 t0packet = 15;
-function savetimer(){
+function savetimer(e){
+    retryWriteObject = e;
+    retryWriteObject.style.background='#FFFFFF';
     if (typeof t0 != "undefined"){     clearInterval(t0);}
     if ((document.getElementById('t0m').value*60000)+(document.getElementById('t0s').value*1000) > 0){
         t0 = setInterval(function(){t0timer()},(document.getElementById('t0m').value*60000)+(document.getElementById('t0s').value*1000));
@@ -15,14 +17,15 @@ function savetimer(){
     gatherer.id[document.getElementById("selectedgatherer").value].t2s=document.getElementById('t2s').value;
     gatherer.id[document.getElementById("selectedgatherer").value].t3m=document.getElementById('t3m').value;
     gatherer.id[document.getElementById("selectedgatherer").value].t3s=document.getElementById('t3s').value;
-    var temp =   'r '+document.getElementById("selectedgatherer").value+' 0 111 59 ';
+    var temp =   'r '+document.getElementById("selectedgatherer").value+' 1 239 59 '; // send command with confirmation (111+128)
     temp = temp +gatherer.id[document.getElementById("selectedgatherer").value].t0m+ ' '+(gatherer.id[document.getElementById("selectedgatherer").value].t0s)*4+ ' ';
     temp = temp +gatherer.id[document.getElementById("selectedgatherer").value].t1m+ ' '+(gatherer.id[document.getElementById("selectedgatherer").value].t1s)*4+ ' ';
     temp = temp +gatherer.id[document.getElementById("selectedgatherer").value].t2m+ ' '+(gatherer.id[document.getElementById("selectedgatherer").value].t2s)*4+ ' ';
     temp = temp +gatherer.id[document.getElementById("selectedgatherer").value].t3m+ ' '+(gatherer.id[document.getElementById("selectedgatherer").value].t3s)*4+ ' ';
     console.log(temp);
-    sendpacket(temp);
-    savesettings();
+    sendPacketWithRetry(temp);
+    //moved save setting to msghandler
+
 }
 function t0timer(){
     if(t0packet > 29)
@@ -33,10 +36,18 @@ function t0timer(){
     ++t0packet;
 
 }
-function writetoeeprom(address){
-    //save the value to eeprom and store it in settings as there currently is no way to retrieve it for display - only exicute it
+function writetoeeprom(address,e){
+    //save the value to eeprom and store it in settings as there currently is no way to retrieve it for display - only write it
+    retryWriteObject = e;
+    retryWriteObject.style.background='#FFFFFF';
 
-    sendpacket('r '+document.getElementById("selectedgatherer").value+' 0 111 '+address+' '+document.getElementById('e'+address).value );
+    sendPacketWithRetry('r '+document.getElementById("selectedgatherer").value+' 1 239 '+address+' '+document.getElementById('e'+address).value,function(rslt,text){
+        console.log("callback results",rslt,test);
+
+
+    } );
+
+//    sendpacket('r '+document.getElementById("selectedgatherer").value+' 0 111 '+address+' '+document.getElementById('e'+address).value );
     if (gatherer.id[document.getElementById("selectedgatherer").value].eeprom == undefined){
         gatherer.id[document.getElementById("selectedgatherer").value].eeprom={};
     }
@@ -434,6 +445,7 @@ function validatename(x){
 function refreshselectedgatherer(){
     var temp=""
     for (var prop in gatherer.id)
+
     {
         temp = temp+'<option value ="'+prop+'">'+gatherer.id[prop].name+'('+prop+')'+'</option>'
 
@@ -444,10 +456,71 @@ function refreshselectedgatherer(){
 
 
 }
+function deleteSelectedGatherer(){
+    if (confirm("Delete ID "+document.getElementById('selectedgatherer').value+" Named:"+gatherer.id[document.getElementById('selectedgatherer').value].name))
+    {
 
-function addnewgatherer(){
-    var id=document.getElementById("ID");
-    var name=document.getElementById("NAME");
-    id.value="";
-    name.value=""
+        delete gatherer.id[document.getElementById('selectedgatherer').value];
+        document.getElementById('selectedgatherer').selectedIndex = "1";
+        document.getElementById("ID").value="1";
+        document.getElementById("NAME").value= gatherer.id[1].name;
+        refreshselectedgatherer();
+        console.log("delete goes here");
+
+
+    }
+
+
+
+
+}
+function addnewgatherer() {
+    if (confirm("Make sure new Gatherer is powered on and press ok") == true)
+    {
+
+        for (var i = 2; i < 256; ++i) {
+            if (gatherer.id[i] == undefined) {
+
+                console.log("first available id is ", i)
+                break;
+            }
+
+        }
+
+        radioSetID(i);
+        // if successfull will fire event in msghandles (addedNewGatherer)
+
+
+    }
+}
+function writeAllEeprom(){
+    count = 0;
+    callback = function(rslt,txt){
+        console.log("count",count);
+        if (rslt == 0){
+         ++count;
+
+            if (count > 58){
+
+                callback = "";
+              savetimer(document.getElementById("savetimer"));
+                alert("EEprom Write Sucess");
+
+
+                       }else
+            {
+                alert
+                writetoeeprom(count,document.getElementById("eeprom"+count));
+
+            }
+        }else
+        {
+            alert("Writing All EEprom failed at red button - retry");
+
+            console.log("fail",count);
+            callback = "";
+
+        }
+    }
+    writetoeeprom(0,document.getElementById("eeprom0"));
 }

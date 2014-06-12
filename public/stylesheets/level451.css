@@ -50,7 +50,7 @@
 
     transition: width 3000ms cubic-bezier(0.17, 0.04, 0.03, 0.94);
     overflow: hidden;
-    height:268px;
+    height:240px;
     width:1200px;
     display:block;
 
@@ -116,7 +116,6 @@ div#graphdiv {
 }
 #graphtitle>h1 {
     text-align: center;
-    contenteditable:true;
 }
 .neverdisplay
 {

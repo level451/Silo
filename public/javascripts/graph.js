@@ -232,7 +232,13 @@ function graph(graphname){
             }
         }
         if (this.endelement < 1 || this.endelement > this.data.length-1){ this.endelement = this.data.length-1}
+        //debug
 
+        if ( this.data[this.endelement] == undefined)
+        {console.log("No Data?",this.endelement,this.data.length);
+
+        }
+        //enddebug
         if (this.endelement ==  this.data.length || this.data[this.endelement].Time < e){
 
             for (var i = this.endelement; i<this.data.length;++i){

@@ -10,13 +10,14 @@
 
 
 <html>
+<button onclick="radioPingTest(15)">pingtest</button>
 
 <input class="neverdisplay" type="checkbox" id="showhideEdittoggle" />
 <label id="showhideEdit" for="showhideEdittoggle"></label>
 
 <div id="Edit">
 <div id="graphtitle">
-    <h1 id="title" onblur='nameChange()' onkeydown='if (event.keyCode == 13){nameChange();return false;}'></h1>
+    <h1 contenteditable="true" id="title" onblur='nameChange()' onkeydown='if (event.keyCode == 13){nameChange();return false;}'></h1>
 </div>
 <div id="graphheader">
 
@@ -67,7 +68,6 @@
     <canvas id="g1_overview" width="1200px" height="100px" style="border:1px solid #000000; position: relative; left: 0; top: 0;z-index: 1;" tabindex="1"></canvas>
     <canvas id="g1_overviewindicator" width="1200px" height="100" style="border:1px solid #000000;position: absolute; left: 0; top: 0; z-index: 0;" tabindex="1"></canvas><br>
 </div>
-    <div id  = "buttons"></div>
 
 </div>
 <div id="graphdiv">
@@ -102,6 +102,8 @@
 
 
 </div>
+<div id  = "buttons"></div>
+
 </body>
 </html>
 <script>
@@ -142,7 +144,6 @@
 
         document.getElementById("title").innerHTML=sg.name;
 
-
         //resize();
     }
     function msghandler(indata){
@@ -155,15 +156,20 @@
             g.data.push(s);
 
         }
+        if (s.packettype == "radioPingTestResults"){
+            alert("Ping results from "+ s.unit+": "+ s.text);
 
+        }
 
         if (s.packettype == "query") // got query data from silo
         {
+            //console.log("query back", s.data);
             // convert all the stupid text dates to numbers
             for (i=0;i< s.data.length;++i){
                 s.data[i].Time = new Date(s.data[i].Time).getTime();
             }
             g.addData(s.data,new Date(s.startTime).getTime(), new Date(s.endTime).getTime());
+            graphItemsOnChange();
 
 
             g.drawOverview();
@@ -256,21 +262,30 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
 
 }
     function addsensortograph(){
+
         if (gatherer.graph[document.getElementById("graph").value].sensor[document.getElementById("availablesensors").value+'_'+document.getElementById("selectedgatherer").value] == undefined)
         {
+
             // wow gatherer.graph[id].sensor[sensor]
             var id=document.getElementById("graph").value;
             var sensor =document.getElementById("availablesensors").value+'_'+document.getElementById("selectedgatherer").value;
+
             gatherer.graph[id].sensor[sensor] = {};
             gatherer.graph[id].sensor[sensor].visible = true;
             gatherer.graph[id].sensor[sensor].color = "#508050";
             autominmax(sensor);
 
-        }
-        refreshavailablesensors();
+            refreshavailablesensors(); // creates the list for the availa ble sensor on the graph drop-down
 
-        g.drawMain();
-        g.drawOverview();
+            g.drawMain();
+            g.drawOverview();
+            gc_change();
+
+
+        }else{console.log("sensor already on graph")}
+
+
+
     }
     function autominmax(sensor){
         var id=document.getElementById("graph").value;
@@ -341,7 +356,7 @@ function gc_change(){
     g.drawMain();
     g.drawOverview();
     g.drawscale(g.maingraphscale);
-
+    refreshbuttons();
 
 }
 

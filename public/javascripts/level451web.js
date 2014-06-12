@@ -23,7 +23,8 @@ function WebSocketSetup()
 }
 function onOpen(evt) {
     console.log("CONNECTED");
-    var thisgraph = gatherer.graph[document.getElementById("graph").value];
+
+   var thisgraph = gatherer.graph[document.getElementById("graph").value];
     if (thisgraph.daysDataResolution == undefined){thisgraph.daysDataResolution = 'avg60';}
     if (thisgraph.daysData != undefined){
         query(thisgraph.daysDataResolution,new Date(new Date()-((24*thisgraph.daysData)*60*60000)),new Date(),'init');
@@ -87,6 +88,14 @@ function drawgauage(id,value){
 
 
 function sendpacket(temp){ websocket.send('{"packettype":"packet","data":"'+temp+'\\n"}');}
+function sendPacketWithRetry(temp){
+    //results get processed by webpage messagehandler (commandResults)
+
+    websocket.send('{"packettype":"packetWithRetry","data":"'+temp+'\\n"}');
+}
+
+function radioPingTest(temp){ websocket.send('{"packettype":"radioPingTest","unit":'+temp+'}');}
+function radioSetID(temp){ websocket.send('{"packettype":"radioSetID","unit":'+temp+'}');}
 function query(type,starttime,endtime,opt){
 
     var sendobj = {};

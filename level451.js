@@ -8,14 +8,14 @@ websock = require('./websocketlib');
 serial = require('./Seriallib');
 MongoClient = require('mongodb').MongoClient;
 lastdata = {}
-
+commandRetries = 0;
 exports.setup = function(){
 
    //     seriallib.openSerialPort("/dev/ttyACM0"); //not windows
         websock.listen();
 // mongo
-    //MongoClient.connect("mongodb://localhost:27017/gatherer", function(err, db)
-    MongoClient.connect("mongodb://10.6.1.138:27017/gatherer", function(err, db)
+    MongoClient.connect("mongodb://localhost:27017/gatherer", function(err, db)
+  //MongoClient.connect("mongodb://10.6.1.138:27017/gatherer", function(err, db)
     {
         if (err)
         {
@@ -59,10 +59,10 @@ exports.setup = function(){
 
 
                     // open the seial port after mongo is open
-        //            serial.openSerialPort('com6'); //windows
+                    serial.openSerialPort('com6'); //windows
                     //     serial.openSerialPort("/dev/ttyACM0"); //not windows usb
 
-                         serial.openSerialPort("/dev/ttyAMA0"); //not windows rs232
+                       //  serial.openSerialPort("/dev/ttyAMA0"); //not windows rs232
 
 
                 } else
@@ -103,7 +103,35 @@ exports.wsDataIn = function(data,id){
     }
     //console.log(webData);
     //console.log('Packettype '+webData.packettype);
+    if (webData.packettype == "radioSetID"){
+      level451.radioSetID(webData.unit);
+    }
+    if (webData.packettype == "radioPingTest"){
+        pingtest(webData.unit,function(rslt,txt) {
+            console.log("Ping",txt);
+            rv={}
+            rv.packettype = 'radioPingTestResults';
+            rv.rslt = rslt;
+            rv.text = txt;
+            rv.unit = webData.unit;
+            websock.send(JSON.stringify(rv),id);
+
+        });
+    }
     if (webData.packettype == "packet"){
+        serial.write(webData.data)
+    }
+    if (webData.packettype == "packetWithRetry"){
+
+        level451.retryWrite(webData.data,function(rslt,text){
+            console.log("retryWrite callback success",rslt,text);
+            rv={}
+            rv.packettype = 'commandResults';
+            rv.rslt = rslt;
+            rv.text = text;
+            websock.send(JSON.stringify(rv),id)
+        });
+
         serial.write(webData.data)
     }
     if (webData.packettype == "query"){
@@ -207,8 +235,6 @@ exports.wsDataIn = function(data,id){
 
             console.log('Gatherer Setting updated');
         });
-
-
     }
 
 
@@ -216,12 +242,171 @@ exports.wsDataIn = function(data,id){
 
 };
 
+
+exports.retryWrite = function(command,cback){
+// sends a command (usually out the radio) and retries until it get confirmation of success
+
+    if (commandRetries == 0){
+    commandRetries = 1;
+    pingReturn = 0;
+    savecommand = command;
+    callback = cback; // save the callback because this function calls itself
+
+    serial.write(savecommand);
+        console.log(savecommand);
+        setTimeout(function(){level451.retryWrite();},250);
+    } else {
+    if (commandRetries < 15 &&  pingReturn == 0 )
+    {
+        console.log("Retry Command",commandRetries);
+
+        commandRetries++;
+        serial.write(savecommand);
+        setTimeout(function(){level451.retryWrite();},250);
+        return;
+    }
+    if ( pingReturn > 0 ){
+        commandRetries=0;
+        if (callback){
+            return callback(0,"Success");
+        }
+        console.log("Command success");
+
+        return;
+
+    }
+    if (commandRetries >= 15 ){
+        console.log("command may have failed");
+        commandRetries=0;
+        if (callback){
+           return callback(-1,"Retry limit exceeded without confirmation - command may have failed");
+        }
+        return;
+    }
+
+    }
+}
+
+function infoToDisplay(txt){
+
+
+    rv={}
+    rv.packettype = 'infoToDisplay';
+
+    rv.text = txt;
+    websock.send(JSON.stringify(rv));
+console.log("sending info to display",txt);
+}
+exports.radioSetID = function(unit){
+
+    infoToDisplay("Checking to see if ID"+unit+" is available");
+
+
+    pingtest(unit,function(rslt,text) {
+
+        if (rslt == 0){
+            infoToDisplay("ID "+unit+ " appears available");
+
+        infoToDisplay("Searching for a new unit (ID 0)");
+        pingtest(0, function (rslt, text) {
+            console.log("Ping Results " + text, rslt);
+            // now call retry command
+            if (rslt == 0) {
+                infoToDisplay("Failed to contact new unit (ID 0)");
+                return;
+
+            }
+            if (rslt > 2) {
+
+                infoToDisplay("Unit found! " + rslt + "0% - attempting to assigning unit id of " + unit);
+
+                level451.retryWrite("r 0 " + unit + " 112\n", function (rslt, text) {
+                    //console.log("retryWrite callback success",rslt,text);
+                    if (rslt == 0) {
+                        infoToDisplay("Unit ID assigned");
+
+                    } else {
+                        infoToDisplay("Unit ID may have failed ");
+                    }
+                    infoToDisplay("Attempting to contact unit on new id")
+
+                    pingtest(unit, function (rslt, text) {
+                        if (rslt > 0) {
+                            infoToDisplay("Success - new ID of "+unit+" assigned " + rslt + "0%");
+
+                            rv={}
+                            rv.packettype = 'addedNewGatherer';
+
+                            rv.id = unit;
+                            websock.send(JSON.stringify(rv));
+
+
+
+
+                        } else {
+                            infoToDisplay("Fail to contact new unit ID - please retry")
+                        }
+
+
+                    });
+
+
+                });
+
+
+            } else {
+                // failed poor link qualtiy
+                infoToDisplay("Unit found - link quality too low " + rslt + "0% - adjust location and retry");
+            }
+
+
+//        level451.retryWrite("r "+unit+" 1 228 63 2 55 55\n",function(rslt,text){
+//            console.log("retryWrite callback success",rslt,text);
+//
+//        });
+
+
+        });}
+        else
+        {
+            infoToDisplay("Id already in use");
+        }
+    });
+    //pingUnit = unit;
+}
+function pingtest(unit,callback){
+    pingUnit=unit;
+    pingCount = 10;
+    pingReturn = 0;
+
+    serial.write("r "+pingUnit+" 1 129\n");
+    setTimeout(function(){pingTimer(callback);},200);
+
+
+}
+function pingTimer(callback){
+    pingCount-- ;
+    if (pingCount > 0){
+        serial.write("r "+pingUnit+" 1 129\n");
+       // console.log("ping sent");
+        setTimeout(function(){pingTimer(callback);},200);
+
+    }else
+    {
+
+        //console.log("ping finished",global.pingReturn);
+        if (callback){
+            return callback(pingReturn,pingReturn+"/10");
+        }
+
+    }
+
+
+}
+
 exports.sDataIn = function(data){
     try{
         var sData = JSON.parse(data);
-
-        //console.log(sData);
-
     }
     catch(err)
     {
@@ -233,7 +418,15 @@ exports.sDataIn = function(data){
         console.log ("no id found in data");
         return;
      }
-var dedupe = {};
+    if ( sData.Type == 1 )
+    {
+     pingReturn++;
+    return;
+
+    }
+
+
+    var dedupe = {};
 //only record the enableds sensor in settings
 //only record if value has changed
     dedupe.ID = sData.ID;
