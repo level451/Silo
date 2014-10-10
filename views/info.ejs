@@ -306,11 +306,12 @@
         startelement=0;
         endelement=0;
     }
-    var gatherer=<%-JSON.stringify(gathererSettings)%> // load the settings from the setting collection
+    var gatherer=<%-JSON.stringify(gathererSettings)%> // load the settings from the setting collectionvar
     window.addEventListener("load",onload, false);
     function msghandler(indata){
         s=JSON.parse(indata);
-        //console.log(s);
+
+console.log(s.packettype, s.dataType);
         if (s.packettype == "radioPingTestResults"){
             alert("Ping results from "+ s.unit+": "+ s.text);
 
@@ -332,8 +333,7 @@
                 gauges.innerHTML = gauges.innerHTML + '<div class="sensorinfo" height="250px" id="gatherer'+id+'"> Sensor'+id;
                 gathererid = document.getElementById("gatherer"+id);
             }
-
-            for(var sensors in s){
+ for(var sensors in s){
                 sensorid = document.getElementById(sensors);
                 if (sensorid == undefined){
                     gathererid.innerHTML = gathererid.innerHTML + '<canvas id="'+sensors+'" width="200" height="150"></canvas>'
@@ -341,7 +341,14 @@
                     // create canvas in div
 
                 }
-                drawgauage(sensors,s[sensors]);
+
+     drawgauage(sensors,s[sensors]);
+
+
+
+
+  
+     
             }
 
         }
@@ -359,6 +366,7 @@
             validateselectedgatherer(id);
 
         }
+
         if (s.packettype == "infoToDisplay"){
             console.log(s.text);
             alert(s.text);

@@ -12,7 +12,10 @@ var pmp = require('pmp');
 var app = express();
 
 // all environments
-app.set('port', process.env.PORT || 3000);
+
+//app.set('port', process.env.PORT || 3000);
+app.set('port',3000);
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.set('view engine', 'ejs');
@@ -38,16 +41,20 @@ app.get('/graph', routes.graph);
 //app.get('/users', user.list);
 
 http.createServer(app).listen(app.get('port'), function(){
-  console.log('Express server listening on port ' + app.get('port'));
+  console.log('Web server listening on port ' + app.get('port'));
 });
 global.level451 = require('./level451');
 global.ejs = require('./ejs');
-// map the ports
+// attempt to open holes in router on port 3000 & 8080
 
-pmp.portMap('',3000,4000,60*60*48,function(err,rslt){
-    console.log(err,rslt);
-    pmp.portMap(rslt.gateway,8080,8080,60*60*48,function(err,rslt){
-        console.log(err,rslt);
+pmp.portMap('',3000,3000,60*60*148,function(err,rslt){
+
+    if (err != 0){console.log(err,rslt);}else
+    {console.log("Opened external hole in router for port 3000 http")}
+    pmp.portMap(rslt.gateway,8080,8080,60*60*148,function(err,rslt){
+        if (err != 0){console.log(err,rslt);}else
+    {console.log("Opened external hole in router for port 8080 websocket")}
+
     });
 
 });

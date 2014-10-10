@@ -57,7 +57,7 @@ function savesettings(){
 }
 
 function drawgauage(id,value){
-
+console.log("drawgauge");
     if (value > 99){value = value.toFixed(0);}
     if (value > 9 && value < 100){value = value.toFixed(1);}
     if (value < 10 && value > 0){

@@ -176,34 +176,18 @@ function graph(graphname){
     }
     this.draw = function(canvas,s,e,drawIndicatoronly,isoverview){
         var ctx= canvas.getContext("2d");
+        ctx.globalAlpha = 1;
+
         ctx.clearRect (0 , 0 , canvas.width , canvas.height );
         var bottomy = canvas.height;
 
         var ppms =(canvas.width)/(e-s); // pixels per millisecond
-        //see if any sensor is selected
-        var selected = undefined;
-       if (!isoverview){
-            for (var sensor in gatherer.graph[document.getElementById("graph").value].sensor)
-            {
-                if ( gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected == true){
-                    selected = sensor;
-                    break;
-
-                }
-            }
-
-            if (selected == undefined){
-                ctx.globalAlpha = 1;
-            } else
-            {ctx.globalAlpha = .4;}
-       }
         if (drawIndicatoronly){
             ctx.fillStyle="#909090";
             var ppms =(canvas.width)/(this.dataEnd-this.dataStart); // pixels per millisecond
                ctx.fillRect(0,0,(s-this.dataStart)*ppms,bottomy);
                 ctx.fillRect((e-this.dataStart)*ppms,0,canvas.width,bottomy);
                 return;
-            ctx.globalAlpha = .4;
 
         }else{
 
@@ -292,7 +276,7 @@ var timestep = 60000*60*96 ;// days
         ctx.strokeStyle="#c0c0c0";
         ctx.fillStyle="#000000"
         ctx.font ="10pt Arial";
-        //draw up to 60 lines
+        //draw up to 60 lines time line
         for (var i=0; i<60;i++){
 
             time = (timestep*(i+1))-(s-roundedstart);
@@ -318,6 +302,18 @@ var timestep = 60000*60*96 ;// days
         var x = gatherer.graph[document.getElementById("graph").value].sensor[sensor];
         if (x.multiplier == undefined){x.multiplier = 1;}
         if (!x.visible){continue;}
+            if (!isoverview) {
+
+                if (g.selected) { // if something is selected
+                    if (x.selected) { // if its this
+                        ctx.globalAlpha = 1;
+                    } else {
+                        ctx.globalAlpha = .2; // otherwise draw it lighter
+                       // continue;
+
+                    }
+                }
+            }
             ctx.beginPath();
 
             if (x.color == undefined){
@@ -325,14 +321,7 @@ var timestep = 60000*60*96 ;// days
        }else
        {ctx.strokeStyle= x.color;
        }
-            if (!isoverview){
-            if (x.selected) {
-                ctx.globalAlpha = 1;
-            }else{
-                if (selected != undefined){ ctx.globalAlpha = .2;
-                                        }
-                }
-            }
+
 
             // find the first occerance of the sensor at or before the starttime
             var firstpoint = this.startelement;
@@ -349,8 +338,8 @@ var timestep = 60000*60*96 ;// days
             for (var i = this.startelement; i<endele+1;++i){
             if (this.data[i][sensor]){
                 ctx.lineTo(((this.data[i].Time)-s)*ppms,gety((this.data[i][sensor]* x.multiplier), x.min, x.max,bottomy));
-
-                if (x.selected && !isoverview){
+                                /// draw the data point circles
+                if (x.selected && !isoverview &&  gatherer.graph[document.getElementById("graph").value].details > 1){
                 ctx.arc(((this.data[i].Time)-s)*ppms,gety((this.data[i][sensor]* x.multiplier), x.min, x.max,bottomy),2,0,2*Math.PI);
 
                 }
@@ -358,8 +347,10 @@ var timestep = 60000*60*96 ;// days
             }
         }
 
-            ctx.stroke();
-        // plot max and min
+
+           ctx.stroke();
+          ctx.beginPath();
+        // plot max and min of each point
             // only on high detail
             if (x.selected && !isoverview && gatherer.graph[document.getElementById("graph").value].details > 2) {
                 ctx.beginPath();
@@ -387,12 +378,13 @@ var timestep = 60000*60*96 ;// days
 
         if (!isoverview && g.selected != ''){
         // lighten the area where we need to draw the scale
-       ctx.globalAlpha= .75;
+      ctx.globalAlpha= .75;
         ctx.fillStyle="#ffffff";
         ctx.fillRect (0 , 30 , 100 , canvas.height );
         ctx.globalAlpha= 1;
+            ctx.stroke();
+
         }
-        ctx.stroke();
         // draw the start and stat times
         ctx.fillStyle="#000000";
         ctx.save();
@@ -438,7 +430,13 @@ this.drawscale = function(canvas){
         var count = 0;
 
         ctx.font = "10pt Arial";
-        ctx.fillStyle = x.color;
+        if (x && x.color) {
+            ctx.fillStyle = x.color;
+        }else
+        {
+            ctx.fillStyle="#000000"
+        }
+
         ctx.beginPath();
         var gv = (x.min * 1) + ((x.max - x.min) * .10); // 2% Higher than min
         var xc = gety(gv, x.min, x.max, canvas.height);

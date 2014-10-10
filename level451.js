@@ -27,7 +27,7 @@ exports.setup = function(){
             db.createCollection("log", { capped : true, size : 1000000000, max : 25000000 },function (err,res){} );
             db.createCollection("avg1", { capped : true, size : 1000000000, max : 2628000 },function (err,res){} );
 
-            console.log("TWI: We are connected to mondo test database");
+            console.log("Connected to database!");
             global.cLog = db.collection('log');
             global.cAvg1 = db.collection('avg1');
             global.cAvg60 = db.collection('avg60');
@@ -59,7 +59,8 @@ exports.setup = function(){
 
 
                     // open the seial port after mongo is open
-                    serial.openSerialPort('com6'); //windows
+
+                    serial.openSerialPort(process.argv[2]); // port passed by command line parameter
                     //     serial.openSerialPort("/dev/ttyACM0"); //not windows usb
 
                        //  serial.openSerialPort("/dev/ttyAMA0"); //not windows rs232
@@ -73,6 +74,8 @@ exports.setup = function(){
                     console.error("Gatherer Settings missing");
                     cSettings.insert(gathererSettings,function (err,res){
                         console.log("Gatherer settings created "+res);
+                        // open the serial port after mongo is open
+                        serial.openSerialPort(process.argv[2]); // port passed by command line parameter
                     });
 
                 }
@@ -439,7 +442,8 @@ for (prop in sData){
             if (lastdata[sData.ID] == undefined){
                 lastdata[sData.ID] = {};
             }
-            if (typeof gathererSettings.id[sData.ID].sensor[cprop] != "undefined" && gathererSettings.id[sData.ID].sensor[cprop].available == true){
+        // was erroring here 10/10 - with new databaswe
+            if ( typeof gathererSettings.id[sData.ID] != 'undefined' && typeof gathererSettings.id[sData.ID].sensor[cprop] != "undefined" && gathererSettings.id[sData.ID].sensor[cprop].available == true){
               //  console.log("available prop:"+prop);
 
                 if (lastdata[sData.ID][prop] == undefined){

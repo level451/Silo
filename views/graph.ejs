@@ -129,8 +129,9 @@
             gatherer.graph[0].sensor={};
 
     }
+        refreshgraphlist(setGraphFromName("<%=graph%>"));
         refreshavailablesensors(setGraphFromName("<%=graph%>"));
-
+        drawbuttons();
     if (setGraphFromName("<%=graph%>") > -1)
     {
     }else
@@ -209,33 +210,41 @@
 
 
     }
-function refreshavailablesensors(graphid){
-   // var type = document.getElementById("availablesensors");
-var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgatherer").value].sensor)   ;
-    var temp='';
-    for (var prop in selectedgatherersensor){
-        if (selectedgatherersensor[prop].available){
-            temp=temp+'<option value="'+prop+'">'+selectedgatherersensor[prop].name+'('+prop+')</option>';
+function refreshavailablesensors(graphid) {
+    // var type = document.getElementById("availablesensors");
+// refresh available sensor drop down for current graph
+    var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgatherer").value].sensor);
+    var temp = '';
+    for (var prop in selectedgatherersensor) {
+        if (selectedgatherersensor[prop].available) {
+            temp = temp + '<option value="' + prop + '">' + selectedgatherersensor[prop].name + '(' + prop + ')</option>';
 
         }
 
     }
-    document.getElementById("availablesensors").innerHTML=temp;
-
-    temp='';
-    if (graphid >-1){
+    document.getElementById("availablesensors").innerHTML = temp;
+}
+function refreshgraphlist(graphid) {
+ var temp = '';
+    if (graphid > -1) {
         var savevalue = graphid
-    }else{
+    } else {
         var savevalue = document.getElementById("graph").value;
     }
 
+    for (var prop in gatherer.graph) {
+        temp = temp + '<option value="' + prop + '">' + gatherer.graph[prop].name + '(' + prop + ')</option>';
+    }
+    document.getElementById("graph").innerHTML = temp;
 
-    for (var prop in gatherer.graph){
-           temp=temp+'<option value="'+prop+'">'+gatherer.graph[prop].name+'('+prop+')</option>';
-        }
-    document.getElementById("graph").innerHTML=temp;
-    if (savevalue != ""){   document.getElementById("graph").value =  savevalue;}
-    temp='';
+
+    if (savevalue != "") {
+        document.getElementById("graph").value = savevalue;
+    }
+}
+
+function drawbuttons(){
+ var   temp='';
     for (var prop in gatherer.graph[document.getElementById("graph").value].sensor)
 
     {
@@ -253,8 +262,6 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
         if (gatherer.graph[document.getElementById("graph").value].sensor[prop].selected){
            g.selected = prop;
         }
-
-
     }
     temp=temp+'<button type="button" data-sensor="" onclick="selectNone();">Select None</button>';
 
@@ -273,13 +280,12 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
             gatherer.graph[id].sensor[sensor] = {};
             gatherer.graph[id].sensor[sensor].visible = true;
             gatherer.graph[id].sensor[sensor].color = "#508050";
-            autominmax(sensor);
+            autominmaxgo(sensor); // set to min and max values
 
-            refreshavailablesensors(); // creates the list for the availa ble sensor on the graph drop-down
-
-            g.drawMain();
-            g.drawOverview();
-            gc_change();
+ //           refreshavailablesensors(); // creates the list for the availa ble sensor on the graph drop-down
+//            g.drawMain();
+//            g.drawOverview();
+//            gc_change();
 
 
         }else{console.log("sensor already on graph")}
@@ -288,6 +294,14 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
 
     }
     function autominmax(sensor){
+        autominmaxgo(sensor);
+        graphItemsOnChange();
+        gc_change();
+        g.drawMain();
+        g.drawscale(g.maingraphscale);
+
+    }
+    function autominmaxgo(sensor){
         var id=document.getElementById("graph").value;
         var min= 99999;
         var max=-99999;
@@ -308,10 +322,6 @@ var selectedgatherersensor = (gatherer.id[document.getElementById("selectedgathe
         gatherer.graph[id].sensor[sensor].min = (min - padding)*gatherer.graph[id].sensor[sensor].multiplier;
 //        console.log("min", gatherer.graph[id].sensor[sensor].min,min);
 //        console.log("max", gatherer.graph[id].sensor[sensor].max.max);
-       graphItemsOnChange();
-        gc_change();
-        g.drawMain();
-        g.drawscale(g.maingraphscale);
     }
 function gc_change(){
     var sg =  gatherer.graph[document.getElementById("graph").value];
@@ -501,6 +511,7 @@ function refreshbuttons(){
         document.getElementById("b_"+sensor).style.color="#FFFFFF";
         //selected
         if (gatherer.graph[document.getElementById("graph").value].sensor[sensor].selected == true){
+            gatherer.graph[document.getElementById("graph").value].sensor[sensor].visible = true;
             g.selected = sensor;
             document.getElementById("b_"+sensor).style.font="bold 12px arial";
             document.getElementById("b_"+sensor).style.background=gatherer.graph[document.getElementById("graph").value].sensor[sensor].color;
@@ -547,9 +558,13 @@ function refreshNewGraph()
     refreshavailablesensors();
     document.getElementById("title").innerHTML=gatherer.graph[document.getElementById("graph").value].name;
 
+    drawbuttons();
+    refreshbuttons();
+
+    return;
     g.drawMain();
     g.drawOverview();
-    refreshbuttons();
+
     graphItemsOnChange();
 }
 function removeItemFromGraph(){
